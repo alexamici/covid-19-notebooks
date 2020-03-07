@@ -3,6 +3,7 @@ channels:
   - defaults
 dependencies:
   - python=3.7.*
+  - attrs
   - notebook
   - pandas
   - scipy

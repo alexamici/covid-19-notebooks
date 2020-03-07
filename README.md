@@ -2,6 +2,12 @@
 
 Mainly Italy.
 
+# Contribute
+
+If you spot any inaccuracy please file [an issue on GitHub](https://github.com/alexamici/covid-19-notebooks/issues)
+
+Contributions in the form of a Pull Request are welcomed as long as they are scientifically sound.
+
 # Development
 
 If you don't have *conda* installed, install [miniconda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/): 
