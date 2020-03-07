@@ -1,5 +1,3 @@
-import math
-
 import attr
 import numpy as np
 import scipy.optimize
@@ -13,23 +11,20 @@ def linear(t, t_0, dt):
     return (t - t_0) / dt
 
 
+# good starting point for fitting most of the curves
+P0 = (np.datetime64("2020-02-12", "s"), np.timedelta64(48 * 60 * 60, "s"))
+
+
 @attr.attrs()
 class ExponentialFit:
-    r"""$y = 2 ^ \frac{t - t_0}{\delta t}$"""
+    r"""$f(t) = 2 ^ \frac{t - t_0}{\delta t}$"""
     t_0 = attr.attrib()
     dt = attr.attrib()
     start_fit = attr.attrib()
     stop_fit = attr.attrib()
 
     @classmethod
-    def from_frame(
-        cls,
-        y,
-        data,
-        start_fit=None,
-        stop_fit=None,
-        p0=(np.datetime64("2020-02-12T00:00:00"), np.timedelta64(48 * 60 * 60, "s")),
-    ):
+    def from_frame(cls, y, data, start_fit=None, stop_fit=None, p0=P0):
         t_0_guess, dt_guess = p0
 
         data_fit = data[start_fit:stop_fit]
@@ -40,9 +35,7 @@ class ExponentialFit:
         x_fit = x_norm[np.isfinite(log2_y)]
         log2_y_fit = log2_y[np.isfinite(log2_y)]
 
-        (t_0_norm, dt_norm), _ = scipy.optimize.curve_fit(
-            linear, x_fit, log2_y_fit, p0=(1.0, 1.0)
-        )
+        (t_0_norm, dt_norm), _ = scipy.optimize.curve_fit(linear, x_fit, log2_y_fit)
 
         dt = dt_norm * dt_guess
         t_0 = t_0_guess + t_0_norm * dt_guess
@@ -51,3 +44,6 @@ class ExponentialFit:
 
     def predict(self, t):
         return 2 ** linear(t, self.t_0, self.dt)
+
+    def __str__(self):
+        return f"t_0='{self.t_0}', dt_days={self.dt / np.timedelta64(1, 'D'):.2f}, start_fit={self.start_fit!r}, stop_fit={self.stop_fit}"
