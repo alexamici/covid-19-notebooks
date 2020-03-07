@@ -1,0 +1,9 @@
+name: COVID19
+channels:
+  - defaults
+dependencies:
+  - python=3.7.*
+  - notebook
+  - pandas
+  - scipy
+  - seaborn
