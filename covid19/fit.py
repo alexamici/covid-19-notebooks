@@ -20,14 +20,14 @@ class ExponentialFit:
     r"""$f(t) = 2 ^ \frac{t - t_0}{T_d}$"""
     t_0 = attr.attrib()
     T_d = attr.attrib()
-    start_fit = attr.attrib()
-    stop_fit = attr.attrib()
+    start = attr.attrib()
+    stop = attr.attrib()
 
     @classmethod
-    def from_frame(cls, y, data, start_fit=None, stop_fit=None, p0=P0):
+    def from_frame(cls, y, data, start=None, stop=None, p0=P0):
         t_0_guess, T_d_guess = p0
 
-        data_fit = data[start_fit:stop_fit]
+        data_fit = data[start:stop]
 
         x_norm = linear(data_fit.index.values, t_0_guess, T_d_guess)
         log2_y = np.log2(data_fit[y].values)
@@ -40,7 +40,7 @@ class ExponentialFit:
         T_d = T_d_norm * T_d_guess
         t_0 = t_0_guess + t_0_norm * T_d_guess
 
-        return cls(t_0, T_d, start_fit, stop_fit)
+        return cls(t_0, T_d, start, stop)
 
     @property
     def T_d_days(self):
@@ -50,4 +50,4 @@ class ExponentialFit:
         return 2 ** linear(t, self.t_0, self.T_d)
 
     def __str__(self):
-        return f"t_0='{self.t_0}', T_d_days={self.T_d_days:.2f}, start_fit={self.start_fit!r}, stop_fit={self.stop_fit}"
+        return f"t_0='{self.t_0}', T_d_days={self.T_d_days:.2f}, start={self.start!r}, stop={self.stop}"
