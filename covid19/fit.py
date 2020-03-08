@@ -47,6 +47,8 @@ class ExponentialFit:
         return self.T_d / np.timedelta64(1, "D")
 
     def predict(self, t):
+        if isinstance(t, str):
+            t = np.datetime64(t)
         return 2 ** linear(t, self.t_0, self.T_d)
 
     def __str__(self):
