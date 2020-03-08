@@ -26,7 +26,7 @@ def plot_fit(ax, fit, label=None, extrapolate=(None, None), color=None):
     x_fit = pd.date_range(fit.start, fit.stop, freq="D").values
     y_fit = fit.predict(x_fit)
     if label:
-        label = f"estimated {label} $T_d={fit.T_d_days:.2f}$ days, $t_0=${str(fit.t_0)[:10]}"
+        label = f"{label} fit $T_d={fit.T_d_days:.2f}$ days, $t_0=${str(fit.t_0)[:10]}"
     ax.plot(x_fit, y_fit, ".-", label=label, **plot_kwargs)
 
     ax.set(xlim=(extrapolate_start, extrapolate_stop))
