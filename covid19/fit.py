@@ -32,6 +32,7 @@ class ExponentialFit:
         x_norm = linear(data_fit.index.values, t_0_guess, T_d_guess)
         log2_y = np.log2(data_fit[y].values)
 
+        t_fit = data_fit.index.values[np.isfinite(log2_y)]
         x_fit = x_norm[np.isfinite(log2_y)]
         log2_y_fit = log2_y[np.isfinite(log2_y)]
 
@@ -40,7 +41,7 @@ class ExponentialFit:
         T_d = T_d_norm * T_d_guess
         t_0 = t_0_guess + t_0_norm * T_d_guess
 
-        return cls(t_0, T_d, start, stop)
+        return cls(t_0, T_d, start=t_fit[0], stop=t_fit[-1])
 
     @property
     def T_d_days(self):
@@ -53,3 +54,10 @@ class ExponentialFit:
 
     def __str__(self):
         return f"t_0='{self.t_0}', T_d_days={self.T_d_days:.2f}, start={self.start!r}, stop={self.stop}"
+
+    def shift(self, offset):
+        if isinstance(offset, (float, int)):
+            offset = np.timedelta64(int(offset * 24 * 60 * 60), "s")
+        start = np.datetime64(self.start) + offset
+        stop = np.datetime64(self.stop) + offset
+        return self.__class__(self.t_0 + offset, self.T_d, start=start, stop=stop)
