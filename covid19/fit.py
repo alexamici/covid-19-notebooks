@@ -58,6 +58,12 @@ class ExponentialFit:
     def shift(self, offset):
         if isinstance(offset, (float, int)):
             offset = np.timedelta64(int(offset * 24 * 60 * 60), "s")
+        t_0 = self.t_0 + offset
         start = np.datetime64(self.start) + offset
         stop = np.datetime64(self.stop) + offset
-        return self.__class__(self.t_0 + offset, self.T_d, start=start, stop=stop)
+        return self.__class__(t_0, self.T_d, start=start, stop=stop)
+
+    def scale(self, scale):
+        offset = -np.log2(scale) * self.T_d
+        t_0 = self.t_0 + offset
+        return self.__class__(t_0, self.T_d, start=self.start, stop=self.stop)

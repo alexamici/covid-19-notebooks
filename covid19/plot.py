@@ -10,7 +10,7 @@ import seaborn as sns
 PALETTE = itertools.cycle(sns.color_palette())
 
 
-def plot_fit(fit, ax, label=None, extrapolate=(None, None), color=None):
+def plot_fit(ax, fit, label=None, extrapolate=(None, None), color=None):
     plot_kwargs = {"color": color or next(PALETTE)}
     extrapolate_start = (
         fit.start if extrapolate[0] is None else np.datetime64(extrapolate[0])
@@ -25,19 +25,14 @@ def plot_fit(fit, ax, label=None, extrapolate=(None, None), color=None):
 
     x_fit = pd.date_range(fit.start, fit.stop, freq="D").values
     y_fit = fit.predict(x_fit)
-    label_fit = (
-        f"estimated {label} $T_d={fit.T_d_days:.2f}$ days, $t_0=${str(fit.t_0)[:10]}"
-    )
-    ax.plot(x_fit, y_fit, ".-", label=label_fit, **plot_kwargs)
+    if label:
+        label = f"estimated {label} $T_d={fit.T_d_days:.2f}$ days, $t_0=${str(fit.t_0)[:10]}"
+    ax.plot(x_fit, y_fit, ".-", label=label, **plot_kwargs)
 
     ax.set(xlim=(extrapolate_start, extrapolate_stop))
 
-    return ax
 
-
-def plot_data(
-    ax, data, start=None, stop=None, label=None, color=None, date_interval=2, **kwargs
-):
+def plot_data(ax, data, start=None, stop=None, label=None, color=None, date_interval=2):
     plot_kwargs = {"color": color or next(PALETTE), "s": 80}
 
     sns.scatterplot(ax=ax, data=data[start:stop], label=label, **plot_kwargs)
@@ -54,6 +49,5 @@ def plot_data(
 
 def plot(ax, data, fit, label=None, extrapolate=(None, None), color=None, **kwargs):
     color = color or next(PALETTE)
-    plot_fit(fit, ax, label=label, extrapolate=extrapolate, color=color, **kwargs)
-    plot_data(ax, data, fit.start, fit.stop, label=label, color=color)
-    return ax
+    plot_fit(ax, fit, label=label, extrapolate=extrapolate, color=color)
+    plot_data(ax, data, fit.start, fit.stop, label=label, color=color, **kwargs)
