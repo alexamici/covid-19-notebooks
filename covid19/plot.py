@@ -50,4 +50,4 @@ def plot_data(ax, data, start=None, stop=None, label=None, color=None, date_inte
 def plot(ax, data, fit, label=None, extrapolate=(None, None), color=None, **kwargs):
     color = color or next(PALETTE)
     plot_fit(ax, fit, label=label, extrapolate=extrapolate, color=color)
-    plot_data(ax, data, fit.start, fit.stop, label=label, color=color, **kwargs)
+    plot_data(ax, data, fit.start, fit.stop, color=color, **kwargs)
