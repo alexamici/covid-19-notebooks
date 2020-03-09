@@ -3,7 +3,10 @@ import pathlib
 import numpy as np
 import requests
 
-
+DPC_DATA_REPO = 'https://raw.githubusercontent.com/pcm-dpc/COVID-19/master'
+DPC_DATA_STREAMS = {
+    'regioni': f'{DPC_DATA_REPO}/dati-regioni/dpc-covid19-ita-regioni.csv',
+}
 REFERENCE_DATETIME = "2020-02-18T16:00"
 
 
@@ -16,6 +19,7 @@ def to_days(date, reference_datetime=REFERENCE_DATETIME, hour_of_day=None):
 
 
 def download(url, path='.'):
+    url = DPC_DATA_STREAMS.get(url, url)
     root_path = pathlib.Path(path)
     download_path = root_path / url.rpartition('/')[2]
     with requests.get(url) as resp:
