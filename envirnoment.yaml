@@ -7,5 +7,6 @@ dependencies:
   - black
   - notebook
   - pandas
+  - requests
   - scipy
   - seaborn

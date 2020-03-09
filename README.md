@@ -2,6 +2,8 @@
 
 Mainly Italy.
 
+ * [Daily data and short term forecasts for Italy](https://github.com/alexamici/covid-19-notebooks/blob/master/notebooks/italy-situation-report.ipynb)
+
 # Contribute
 
 If you spot any inaccuracy please file [an issue on GitHub](https://github.com/alexamici/covid-19-notebooks/issues)
