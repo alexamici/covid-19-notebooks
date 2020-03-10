@@ -32,8 +32,9 @@ def plot_fit(ax, fit, label=None, extrapolate=(None, None), color=None):
     ax.set(xlim=(extrapolate_start, extrapolate_stop))
 
 
-def plot_data(ax, data, start=None, stop=None, label=None, color=None, date_interval=2):
+def plot_data(ax, data, start=None, stop=None, label=None, color=None, date_interval=2, **kwargs):
     plot_kwargs = {"color": color or next(PALETTE), "s": 80}
+    plot_kwargs.update(kwargs)
 
     sns.scatterplot(ax=ax, data=data[start:stop], label=label, **plot_kwargs)
     if start is not None:
