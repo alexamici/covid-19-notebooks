@@ -19,7 +19,7 @@ Clone the repo and set up the conda environment:
 ```
 git clone https://github.com/alexamici/covid-19-notebooks.git
 cd covid-19-notebooks
-conda env create -f envirnoment.yaml
+conda env create -f environment.yaml
 ```
 
 Activate the COVID19 environment and start up the notebook server:
