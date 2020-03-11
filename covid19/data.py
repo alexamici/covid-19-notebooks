@@ -6,6 +6,7 @@ import requests
 DPC_DATA_REPO = 'https://raw.githubusercontent.com/pcm-dpc/COVID-19/master'
 DPC_DATA_STREAMS = {
     'regioni': f'{DPC_DATA_REPO}/dati-regioni/dpc-covid19-ita-regioni.csv',
+    'andamento-nazionale': f'{DPC_DATA_REPO}/dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv'
 }
 REFERENCE_DATETIME = "2020-02-18T16:00"
 
