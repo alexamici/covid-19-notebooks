@@ -53,7 +53,7 @@ class ExponentialFit:
         return 2 ** linear(t, self.t_0, self.T_d)
 
     def __str__(self):
-        return f"T_d_days={self.T_d_days:.2f}, t_0='{self.t_0}', start={str(self.start)[:10]}, stop={str(self.stop)[:10]}"
+        return f"T_d={self.T_d_days:.2f}, t_0='{self.t_0}', start='{str(self.start)[:10]}', stop='{str(self.stop)[:10]}'"
 
     def shift(self, offset):
         if isinstance(offset, (float, int)):
