@@ -3,6 +3,7 @@
 Mainly Italy.
 
  * [Daily data and short term forecasts for Italy](https://github.com/alexamici/covid-19-notebooks/blob/master/notebooks/italy-situation-report.ipynb)
+ * [Daily data and short term forecasts for Italian regions](https://github.com/alexamici/covid-19-notebooks/blob/master/notebooks/italy-regions-situation-report.ipynb)
 
 # Contribute
 
