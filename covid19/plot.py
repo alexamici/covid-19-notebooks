@@ -40,7 +40,7 @@ def plot_data(ax, data, start=None, stop=None, label=None, color=None, date_inte
     if start is not None:
         sns.scatterplot(data=data[data.index < start], marker="x", **plot_kwargs)
     if stop is not None:
-        sns.scatterplot(data=data[data.index > stop], marker="x", **plot_kwargs)
+        sns.scatterplot(data=data[data.index > stop], marker="D", **plot_kwargs)
 
     ax.yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
