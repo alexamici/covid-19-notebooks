@@ -26,13 +26,15 @@ def plot_fit(ax, fit, label=None, extrapolate=(None, None), color=None):
     x_fit = pd.date_range(fit.start, fit.stop, freq="D").values
     y_fit = fit.predict(x_fit)
     if label:
-        label = f"{label} fit $T_d={fit.T_d_days:.2f}$ days, $t_0=${str(fit.t_0)[:10]}"
+        label = f"{label} - $T_d={fit.T_d_days:.1f}$ days, $r^2={fit.r_squared:.2f}$"
     ax.plot(x_fit, y_fit, ".-", label=label, **plot_kwargs)
 
     ax.set(xlim=(extrapolate_start, extrapolate_stop))
 
 
-def plot_data(ax, data, start=None, stop=None, label=None, color=None, date_interval=2, **kwargs):
+def plot_data(
+    ax, data, start=None, stop=None, label=None, color=None, date_interval=2, **kwargs
+):
     plot_kwargs = {"color": color or next(PALETTE), "s": 80}
     plot_kwargs.update(kwargs)
 
