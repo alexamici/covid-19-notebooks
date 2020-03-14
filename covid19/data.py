@@ -12,8 +12,9 @@ DATA_REPOS = {
     "italy": {
         "url": "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master",
         "streams": {
-            "regioni": "{url}/dati-regioni/dpc-covid19-ita-regioni.csv",
             "andamento-nazionale": "{url}/dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv",
+            "regioni": "{url}/dati-regioni/dpc-covid19-ita-regioni.csv",
+            "province": "{url}/dati-province/dpc-covid19-ita-province.csv",
         },
     },
 }
