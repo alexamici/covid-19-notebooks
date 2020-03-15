@@ -1,6 +1,9 @@
 import pathlib
 
+import numpy as np
+import pandas as pd
 import requests
+
 
 DATA_REPOS = {
     "world": {
@@ -30,3 +33,23 @@ def download(url, path=".", repo="italy"):
         with open(download_path, "wb") as fp:
             fp.write(resp.content)
     return str(download_path)
+
+
+def reformat(path):
+    raw_data = pd.read_csv(path)
+    lines = []
+    dates = [np.datetime64('20{2}-{0:02d}-{1:02d}'.format(*map(int, d.split('/')))) for d in raw_data.columns[4:]]
+    for i, record in raw_data.iterrows():
+        for i, d in enumerate(record[4:]):
+            location = record['Country/Region'].strip()
+            if isinstance(record['Province/State'], str):
+                location += ' - ' + record['Province/State'].strip()
+            if d > 0:
+                lines.append({
+                    'location': location,
+                    'country': record['Country/Region'],
+                    'deaths': d,
+                    'date': dates[i]
+                })
+
+    return pd.DataFrame(lines).set_index('date')

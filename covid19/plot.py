@@ -33,16 +33,19 @@ def plot_fit(ax, fit, label=None, extrapolate=(None, None), color=None):
 
 
 def plot_data(
-    ax, data, start=None, stop=None, label=None, color=None, date_interval=2, **kwargs
+    ax, data, start=None, stop=None, label=None, color=None, date_interval=2, kind='scatter', **kwargs
 ):
-    plot_kwargs = {"color": color or next(PALETTE), "s": 80}
+    plot_kwargs = {"color": color or next(PALETTE)}
     plot_kwargs.update(kwargs)
 
-    sns.scatterplot(ax=ax, data=data[start:stop], label=label, **plot_kwargs)
+    if kind=='scatter':
+        sns.scatterplot(ax=ax, data=data[start:stop], label=label, s=80, **plot_kwargs)
+    else:
+        sns.lineplot(ax=ax, data=data[start:stop], label=label, **plot_kwargs)
     if start is not None:
-        sns.scatterplot(data=data[data.index < start], marker="x", **plot_kwargs)
+        sns.scatterplot(data=data[data.index < start], marker="o", s=80, **plot_kwargs)
     if stop is not None:
-        sns.scatterplot(data=data[data.index > stop], marker="D", **plot_kwargs)
+        sns.scatterplot(data=data[data.index > stop], marker="o", s=80, facecolors='none', edgecolor=color, **plot_kwargs)
 
     ax.yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
