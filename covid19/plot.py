@@ -57,3 +57,19 @@ def plot(ax, data, fit, label=None, extrapolate=(None, None), color=None, **kwar
     color = color or next(PALETTE)
     plot_fit(ax, fit, label=label, extrapolate=extrapolate, color=color)
     plot_data(ax, data, fit.start, fit.stop, color=color, **kwargs)
+
+
+ITALY_EVENTS = [
+    # {'x': '2020-02-19', 'label': 'First alarm'},
+    {'x': '2020-02-24', 'label': 'North closes schools'},
+    {'x': '2020-03-01', 'label': 'North partial lockdown'},
+    {'x': '2020-03-05', 'label': 'Italy closes schools'},
+    {'x': '2020-03-08', 'label': 'North lockdown'},
+    {'x': '2020-03-10', 'label': 'Italy lockdown'},
+]
+
+
+def add_events(ax, events=ITALY_EVENTS, offset=0, **kwargs):
+    for event in events:
+        label = '{x} {label}'.format(**event)
+        ax.axvline(x=np.datetime64(event['x']) + np.timedelta64(offset * 24 * 60 * 60, 's'), label=label, **kwargs)
