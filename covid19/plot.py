@@ -65,7 +65,8 @@ ITALY_EVENTS = [
     {'x': '2020-03-01', 'label': 'Lockdown parziale al nord'},
     {'x': '2020-03-05', 'label': 'Chiusura scuole in Italia'},
     {'x': '2020-03-08', 'label': 'Lockdown al nord'},
-    {'x': '2020-03-10', 'label': 'Lockdown in Italia'},
+    {'x': '2020-03-10', 'label': 'Lockdown parziale in Italia'},
+    {'x': '2020-03-12', 'label': 'Lockdown in Italia'},
 ]
 
 
