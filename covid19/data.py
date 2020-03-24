@@ -9,7 +9,7 @@ DATA_REPOS = {
     "world": {
         "url": "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master",
         "streams": {
-            "deaths": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv"
+            "deaths": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
         },
     },
     "italy": {
