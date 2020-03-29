@@ -25,7 +25,7 @@ class ExponentialFit:
     stop = attr.attrib()
 
     @classmethod
-    def from_frame(cls, y, data, start=None, stop=None, p0=P0):
+    def from_frame(cls, y, data, start=None, stop=None, p0=P0, min_value=5):
         t_0_guess, T_d_guess = p0
 
         data_fit = data[start:stop]
@@ -33,9 +33,9 @@ class ExponentialFit:
         x_norm = linear(data_fit.index.values, t_0_guess, T_d_guess)
         log2_y = np.log2(data_fit[y].values)
 
-        t_fit = data_fit.index.values[np.isfinite(log2_y)]
-        x_fit = x_norm[np.isfinite(log2_y)]
-        log2_y_fit = log2_y[np.isfinite(log2_y)]
+        t_fit = data_fit.index.values[np.isfinite(log2_y) & (data_fit[y].values >= min_value)]
+        x_fit = x_norm[np.isfinite(log2_y) & (data_fit[y].values >= min_value)]
+        log2_y_fit = log2_y[np.isfinite(log2_y) & (data_fit[y].values >= min_value)]
 
         # (t_0_norm, T_d_norm), covariance = scipy.optimize.curve_fit(linear, x_fit, log2_y_fit)
         m, y, r2, _, _ = scipy.stats.linregress(x_fit, log2_y_fit)
@@ -71,3 +71,19 @@ class ExponentialFit:
         offset = -np.log2(scale) * self.T_d
         t_0 = self.t_0 + offset
         return self.__class__(t_0, self.T_d, start=self.start, stop=self.stop)
+
+
+def find_best_fits_size(y, data, size):
+    fits = []
+    for start, stop in zip(data.index, data.index[size - 1:]):
+        fits.append(ExponentialFit.from_frame(y, data, start, stop))
+    return sorted(fits, key=lambda x: -x.r2)
+
+
+def find_best_fits(y, data, min_r2=0.99, min_size=3, max_size=16):
+    fits = {}
+    for size in range(max_size, min_size - 1, -1):
+        res = [f for f in find_best_fits_size(y, data, size) if f.r2 >= min_r2]
+        if res:
+            fits[size] = res
+    return fits
