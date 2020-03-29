@@ -20,6 +20,12 @@ DATA_REPOS = {
             "province": "{url}/dati-province/dpc-covid19-ita-province.csv",
         },
     },
+    "usa": {
+        "url": "https://raw.githubusercontent.com/nytimes/covid-19-data/master/",
+        "streams": {
+            "states": "{url}/us-states.csv",
+        },
+    }
 }
 
 
