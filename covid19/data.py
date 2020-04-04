@@ -9,7 +9,8 @@ DATA_REPOS = {
     "world": {
         "url": "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master",
         "streams": {
-            "deaths": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
+            "deaths": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv",
+            "cases": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",
         },
     },
     "italy": {
@@ -21,11 +22,12 @@ DATA_REPOS = {
         },
     },
     "usa": {
-        "url": "https://raw.githubusercontent.com/nytimes/covid-19-data/master/",
+        "url": "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master",
         "streams": {
-            "states": "{url}/us-states.csv",
+            "deaths": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv",
+            "cases": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv",
         },
-    }
+    },
 }
 
 
@@ -41,21 +43,38 @@ def download(url, path=".", repo="italy"):
     return str(download_path)
 
 
-def reformat(path):
-    raw_data = pd.read_csv(path)
-    lines = []
-    dates = [np.datetime64('20{2}-{0:02d}-{1:02d}'.format(*map(int, d.split('/')))) for d in raw_data.columns[4:]]
-    for i, record in raw_data.iterrows():
-        for i, d in enumerate(record[4:]):
-            location = record['Country/Region'].strip()
-            if isinstance(record['Province/State'], str):
-                location += ' - ' + record['Province/State'].strip()
-            if d > 0:
-                lines.append({
-                    'location': location,
-                    'country': record['Country/Region'],
-                    'deaths': d,
-                    'date': dates[i]
-                })
+REFORMAT = {
+    "world": {
+        "date_start": 4,
+        "country": 'Country/Region',
+        "state": 'Province/State',
+    },
+    "usa": {
+        "date_start": 16,
+        "country": 'Country_Region',
+        "state": 'Province_State',
+    },
+}
 
-    return pd.DataFrame(lines).set_index('date')
+
+def reformat(path, kind='world'):
+    raw_data = pd.read_csv(path)
+    date_start = REFORMAT[kind]["date_start"]
+    country = REFORMAT[kind]["country"]
+    state = REFORMAT[kind]["state"]
+    dates = [np.datetime64('20{2}-{0:02d}-{1:02d}'.format(*map(int, d.split('/')))) for d in raw_data.columns[date_start:]]
+    lines = {}
+    for i, record in raw_data.iterrows():
+        for i, d in enumerate(record[date_start:]):
+            location = record[country].strip()
+            if isinstance(record[state], str):
+                location += ' - ' + record[state].strip()
+            if d > 0:
+                lines.setdefault((location, dates[i]), {
+                    'location': location,
+                    'country': record[country],
+                    'deaths': 0,
+                    'date': dates[i]
+                })['deaths'] += d
+
+    return pd.DataFrame(lines.values()).set_index('date')
