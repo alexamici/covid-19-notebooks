@@ -3,6 +3,9 @@ import numpy as np
 import scipy.optimize
 
 
+DAY = np.timedelta64(24 * 3600, 's')
+
+
 def exp2(t, t_0, T_d):
     return 2 ** ((t - t_0) / T_d)
 
@@ -25,17 +28,17 @@ class ExponentialFit:
     stop = attr.attrib()
 
     @classmethod
-    def from_frame(cls, y, data, start=None, stop=None, p0=P0, min_value=5):
+    def from_frame(cls, data, start=None, stop=None, p0=P0, min_value=5):
         t_0_guess, T_d_guess = p0
 
         data_fit = data[start:stop]
 
         x_norm = linear(data_fit.index.values, t_0_guess, T_d_guess)
-        log2_y = np.log2(data_fit[y].values)
+        log2_y = np.log2(data_fit.values)
 
-        t_fit = data_fit.index.values[np.isfinite(log2_y) & (data_fit[y].values >= min_value)]
-        x_fit = x_norm[np.isfinite(log2_y) & (data_fit[y].values >= min_value)]
-        log2_y_fit = log2_y[np.isfinite(log2_y) & (data_fit[y].values >= min_value)]
+        t_fit = data_fit.index.values[np.isfinite(log2_y) & (data_fit.values >= min_value)]
+        x_fit = x_norm[np.isfinite(log2_y) & (data_fit.values >= min_value)]
+        log2_y_fit = log2_y[np.isfinite(log2_y) & (data_fit.values >= min_value)]
 
         # (t_0_norm, T_d_norm), covariance = scipy.optimize.curve_fit(linear, x_fit, log2_y_fit)
         m, y, r2, _, _ = scipy.stats.linregress(x_fit, log2_y_fit)
@@ -57,7 +60,7 @@ class ExponentialFit:
         return 2 ** linear(t, self.t_0, self.T_d)
 
     def __str__(self):
-        return f"T_d={self.T_d_days:.2f}, t_0='{str(self.t_0)[:10]}', r^2={self.r2:.3f} start='{str(self.start)[:10]}', stop='{str(self.stop)[:10]}'"
+        return f"T_d={self.T_d_days:.2f} t_0='{str(self.t_0)[:10]}' r^2={self.r2:.3f} start='{str(self.start)[:10]}' stop='{str(self.stop)[:10]}'"
 
     def shift(self, offset):
         if isinstance(offset, (float, int)):
@@ -87,3 +90,15 @@ def find_best_fits(y, data, min_r2=0.99, min_size=3, max_size=16):
         if res:
             fits[size] = res
     return fits
+
+
+def fit_exponential_segments(data, breaks=(None, None), break_length=DAY):
+    starts = [np.datetime64(b, 's') if b is not None else b for b in breaks]
+    stops = [s - break_length if s is not None else s for s in starts[1:]]
+    exponential_segments = []
+    for start, stop in zip(starts, stops):
+        try:
+            exponential_segments.append(ExponentialFit.from_frame(data, start=start, stop=stop))
+        except ValueError:
+            print(f"skipping start={start} stop={stop}")
+    return exponential_segments
