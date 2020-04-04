@@ -30,24 +30,31 @@ def plot_fit(ax, fit, label=None, extrapolate=(None, None), color=None):
 
 
 def plot_data(
-    ax, data, start=None, stop=None, label=None, color=None, date_interval=2, kind='scatter', **kwargs
+    ax, data, start=None, stop=None, label=None, color=None, date_interval=2, kind='scatter',
+    delay=None, ratio=None, **kwargs
 ):
     plot_kwargs = {"color": color or next(PALETTE)}
     plot_kwargs.update(kwargs)
 
+    data_to_plot = data.copy()
+    if delay is not None:
+        data_to_plot.index = data_to_plot.index - delay * np.timedelta64(24 * 3600, 's')
+    if ratio is not None:
+        data_to_plot = data_to_plot / ratio
+
     if kind=='scatter':
-        sns.scatterplot(ax=ax, data=data[start:stop], label=label, s=80, **plot_kwargs)
+        sns.scatterplot(ax=ax, data=data_to_plot[start:stop], label=label, s=60, **plot_kwargs)
     else:
-        sns.lineplot(ax=ax, data=data[start:stop], label=label, **plot_kwargs)
+        sns.lineplot(ax=ax, data=data_to_plot, label=label, **plot_kwargs)
     if start is not None:
-        sns.scatterplot(data=data[data.index < start], marker="o", s=80, **plot_kwargs)
+        sns.scatterplot(data=data_to_plot[data_to_plot.index < start], marker="o", s=60, **plot_kwargs)
     if stop is not None:
-        sns.scatterplot(data=data[data.index > stop], marker="o", s=80, facecolors='none', edgecolor=color, **plot_kwargs)
+        sns.scatterplot(data=data_to_plot[data_to_plot.index > stop], marker="o", s=80, facecolors='none', edgecolor=color, **plot_kwargs)
 
     ax.yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
     ax.xaxis.set_major_locator(matplotlib.dates.DayLocator(interval=date_interval))
-    ax.xaxis.set_tick_params(rotation=20)
+    ax.xaxis.set_tick_params()
 
 
 def plot(ax, data, fit, label=None, extrapolate=(None, None), color=None, **kwargs):
