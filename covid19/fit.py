@@ -98,7 +98,9 @@ def fit_exponential_segments(data, breaks=(None, None), break_length=DAY):
     exponential_segments = []
     for start, stop in zip(starts, stops):
         try:
-            exponential_segments.append(ExponentialFit.from_frame(data, start=start, stop=stop))
+            fit = ExponentialFit.from_frame(data, start=start, stop=stop)
+            if np.isfinite(fit.T_d):
+                exponential_segments.append(fit)
         except ValueError:
             print(f"skipping start={start} stop={stop}")
     return exponential_segments
