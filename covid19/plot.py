@@ -1,4 +1,5 @@
 import itertools
+import math
 
 import matplotlib
 import numpy as np
@@ -6,20 +7,29 @@ import pandas as pd
 import seaborn as sns
 
 
+DAY = np.timedelta64(24 * 3600, 's')
 PALETTE = itertools.cycle(sns.color_palette())
+LOG2 = math.log(2)
 
 
-def plot_fit(ax, fit, label=None, extrapolate=(None, None), color=None):
-    plot_kwargs = {"color": color or next(PALETTE)}
-    extrapolate_start = (
-        fit.start if extrapolate[0] is None else np.datetime64(extrapolate[0])
-    )
-    extrapolate_stop = (
-        fit.stop if extrapolate[1] is None else np.datetime64(extrapolate[1])
-    )
+def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), color=None):
+    extrapolate_start, extrapolate_stop = extrapolate
+
+    if isinstance(extrapolate_start, int):
+        extrapolate_start = fit.start + extrapolate_start * DAY
+    elif isinstance(extrapolate_start, str):
+        extrapolate_start = np.datetime64(extrapolate_start)
+
+    if isinstance(extrapolate_stop, int):
+        extrapolate_stop = fit.stop + extrapolate_stop * DAY
+    elif isinstance(extrapolate_stop, str):
+        extrapolate_stop = np.datetime64(extrapolate_stop)
 
     x_predict = pd.date_range(extrapolate_start, extrapolate_stop, freq="D")
     y_predict = fit.predict(x_predict)
+
+    plot_kwargs = {"color": color or next(PALETTE)}
+
     ax.plot(x_predict, y_predict, ":", **plot_kwargs)
 
     x_fit = pd.date_range(fit.start, fit.stop, freq="D").values
@@ -30,8 +40,8 @@ def plot_fit(ax, fit, label=None, extrapolate=(None, None), color=None):
 
 
 def plot_data(
-    ax, data, start=None, stop=None, label=None, color=None, date_interval=2, kind='scatter',
-    delay=None, ratio=None, **kwargs
+    ax, data, start=None, stop=None, label=None, color=None, date_interval=7, kind='scatter',
+    delay=None, ratio=None, show_left=False, show_right=False, **kwargs
 ):
     plot_kwargs = {"color": color or next(PALETTE)}
     plot_kwargs.update(kwargs)
@@ -46,9 +56,9 @@ def plot_data(
         sns.scatterplot(ax=ax, data=data_to_plot[start:stop], label=label, s=60, **plot_kwargs)
     else:
         sns.lineplot(ax=ax, data=data_to_plot, label=label, **plot_kwargs)
-    if start is not None:
+    if show_left and start is not None:
         sns.scatterplot(data=data_to_plot[data_to_plot.index < start], marker="o", s=60, **plot_kwargs)
-    if stop is not None:
+    if show_right and stop is not None:
         sns.scatterplot(data=data_to_plot[data_to_plot.index > stop], marker="o", s=80, facecolors='none', edgecolor=color, **plot_kwargs)
 
     ax.yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
@@ -57,10 +67,14 @@ def plot_data(
     ax.xaxis.set_tick_params()
 
 
-def plot(ax, data, fit, label=None, extrapolate=(None, None), color=None, **kwargs):
+def plot(ax, data, fit=None, label=None, extrapolate=(-2, 2), color=None, add_diff=True, **kwargs):
     color = color or next(PALETTE)
-    plot_fit(ax, fit, label=label, extrapolate=extrapolate, color=color)
+    if fit is not None:
+        plot_fit(ax, fit, label=label, extrapolate=extrapolate, color=color)
     plot_data(ax, data, fit.start, fit.stop, color=color, **kwargs)
+    if add_diff:
+        diff = data[fit.start:fit.stop].diff(1) * fit.T_d_days / LOG2
+        plot_data(ax, diff, color=color, alpha=0.5)
 
 
 ITALY_EVENTS = [
