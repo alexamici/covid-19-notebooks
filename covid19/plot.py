@@ -74,7 +74,7 @@ def plot(ax, data, fit=None, label=None, extrapolate=(-2, 2), color=None, add_di
     plot_data(ax, data, fit.start, fit.stop, color=color, **kwargs)
     if add_diff:
         diff = data[fit.start:fit.stop].diff(1) * fit.T_d_days / LOG2
-        plot_data(ax, diff, color=color, alpha=0.5)
+        plot_data(ax, diff, color=color, alpha=0.4)
 
 
 ITALY_EVENTS = [

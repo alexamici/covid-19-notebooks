@@ -73,7 +73,7 @@ class ExponentialFit:
     def scale(self, scale):
         offset = -np.log2(scale) * self.T_d
         t_0 = self.t_0 + offset
-        return self.__class__(t_0, self.T_d, start=self.start, stop=self.stop)
+        return self.__class__(t_0, self.T_d, r2=self.r2, start=self.start, stop=self.stop)
 
 
 def find_best_fits_size(y, data, size):
