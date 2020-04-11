@@ -41,7 +41,7 @@ def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), color=None):
 
 def plot_data(
     ax, data, start=None, stop=None, label=None, color=None, date_interval=7, kind='scatter',
-    delay=None, ratio=None, show_left=False, show_right=False, **kwargs
+    delay=None, ratio=None, show_left=False, show_right=False, drop_negative=True, **kwargs
 ):
     plot_kwargs = {"color": color or next(PALETTE)}
     plot_kwargs.update(kwargs)
@@ -51,6 +51,8 @@ def plot_data(
         data_to_plot.index = data_to_plot.index - delay * np.timedelta64(24 * 3600, 's')
     if ratio is not None:
         data_to_plot = data_to_plot / ratio
+    if drop_negative:
+        data_to_plot = data_to_plot[data_to_plot > 0]
 
     if kind=='scatter':
         sns.scatterplot(ax=ax, data=data_to_plot[start:stop], label=label, s=60, **plot_kwargs)
