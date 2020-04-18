@@ -69,12 +69,14 @@ def reformat(path, kind='world'):
             location = record[country].strip()
             if isinstance(record[state], str):
                 location += ' - ' + record[state].strip()
-            if d > 0:
-                lines.setdefault((location, dates[i]), {
-                    'location': location,
-                    'country': record[country],
-                    'deaths': 0,
-                    'date': dates[i]
-                })['deaths'] += d
+            line = lines.setdefault((location, dates[i]), {
+                'location': location,
+                'country': record[country],
+                'deaths': 0,
+                'population': 0,
+                'date': dates[i]
+            })
+            line['population'] += record.get('Population', 0)
+            line['deaths'] += d
 
     return pd.DataFrame(lines.values()).set_index('date')
