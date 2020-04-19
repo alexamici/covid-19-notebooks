@@ -2,6 +2,7 @@ import itertools
 import math
 
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -94,3 +95,46 @@ def add_events(ax, events=ITALY_EVENTS, offset=0, **kwargs):
     for event in events:
         label = '{x} + {offset} {label}'.format(offset=offset, **event)
         ax.axvline(x=np.datetime64(event['x']) + np.timedelta64(offset * 24 * 60 * 60, 's'), label=label, **kwargs)
+
+
+def subplots(*args, **kwargs):
+    f, ax = plt.subplots(*args, **kwargs)
+
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+    ax.yaxis.grid(color='lightgrey', linewidth=0.5)
+
+    ax.xaxis.grid(color='lightgrey', linewidth=0.5)
+
+    return f, ax
+
+
+def plot_xarray(data, foreground_hue=None, x='time', ax=None, hue='age_class', window=1, foreground_interval=(None, None), ylim=(0, None), **kwargs):
+    if ax is None:
+        _, ax = subplots()
+
+    data_stop = data[x].values.max()
+
+    if window != 1:
+        data = data.rolling({x: window}, center=True).mean()
+
+    if isinstance(foreground_hue, str):
+        foreground_hue = [foreground_hue]
+
+    foreground_data = data.sel({x: slice(*foreground_interval)})
+
+    for h, color in zip(sorted(data[hue].values, reverse=True), sns.color_palette()):
+        label = None if foreground_hue is None or h in foreground_hue else h
+        ax.plot(data[x], data.sel({hue: h}), linewidth=2.5, alpha=.25, color=color, label=label)
+        if foreground_hue is None or h in foreground_hue:
+            ax.plot(foreground_data[x], foreground_data.sel({hue: h}), linewidth=2.5, alpha=.8, color=color, label=h)
+
+    if foreground_interval[1] is not None:
+        ax.set(ylim=ylim)
+        ylim = ax.get_ylim()
+        ax.fill([np.datetime64(foreground_interval[1])] * 2 + [data_stop] * 2, [ylim[0], ylim[1], ylim[1], ylim[0]], 'grey', alpha=0.1)
+        ax.set(ylim=ylim)
+
+    ax.set(**kwargs)
+
+    return ax
