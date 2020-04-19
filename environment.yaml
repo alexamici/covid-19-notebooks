@@ -10,3 +10,4 @@ dependencies:
   - requests
   - scipy
   - seaborn
+  - xarray
