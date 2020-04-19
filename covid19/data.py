@@ -80,3 +80,33 @@ def reformat(path, kind='world'):
             line['deaths'] += d
 
     return pd.DataFrame(lines.values()).set_index('date')
+
+
+def istat_to_pandas(path, drop=True):
+    istat = pd.read_csv(path, encoding='8859', na_values=9999)
+
+    # make a date index from GE
+    def ge2dayofyear(x):
+        return x - 101 if x < 132 else x - 170 if x < 230 else x - 241 if x < 400 else x - 310
+
+    daysofyear = istat['GE'].map(ge2dayofyear).values
+    istat['time'] = np.datetime64('2020-01-01', 'D') + np.timedelta64(1, 'D') * daysofyear
+
+    def cl_eta2age(x):
+        return '0-49' if x <= 10 else f'{(x - 1) // 2 * 10}-{(x - 1) // 2 * 10 + 9}' if x < 19 else '90+'
+
+    istat['age_class'] = istat['CL_ETA'].apply(cl_eta2age)
+
+    if drop:
+        istat = istat[np.isfinite(istat['TOTALE_20'])]
+
+    return istat
+
+
+def istat_to_xarray(path):
+    istat = istat_to_pandas(path)
+    tmp = istat.groupby(['time', 'age_class', 'NOME_PROVINCIA']).agg(
+        deaths=('TOTALE_20', sum),
+    )
+    data = tmp.to_xarray().rename({'NOME_PROVINCIA': 'location'}).fillna(0)
+    return data.assign_coords({'region': ('location', istat.groupby(['NOME_PROVINCIA'])['NOME_REGIONE'].first())})
