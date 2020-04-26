@@ -1,10 +1,13 @@
 name: COVID19
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - python=3.7.*
   - attrs
   - black
+  - cdsapi
+  - cfgrib
   - notebook
   - pandas
   - requests

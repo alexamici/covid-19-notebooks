@@ -31,6 +31,19 @@ DATA_REPOS = {
 }
 
 
+CDM_DIMS = {'location', 'time', 'age_class', 'dayofyear', 'year'}
+CDM_COORDS = CDM_DIMS | {'country', 'state', 'region', 'province', 'lat', 'lon'}
+
+
+def cdm_check(da):
+    dim_names = set(da.dims)
+    if dim_names.difference(CDM_DIMS):
+        raise ValueError(f"Unsupported dims: {dim_names.difference(CDM_DIMS)}")
+    coord_names = set(da.coords)
+    if coord_names.difference(CDM_COORDS):
+        raise ValueError(f"Unsupported coords: {coord_names.difference(CDM_COORDS)}")
+
+
 def download(url, path=".", repo="italy"):
     repo = DATA_REPOS[repo]
     base_url = repo["url"]
@@ -82,6 +95,41 @@ def reformat(path, kind='world'):
     return pd.DataFrame(lines.values()).set_index('date')
 
 
+def jhu_global_to_xarray(path):
+    df = pd.read_csv(path, keep_default_na=False)
+    ds = df.to_xarray()
+    ds = ds.rename({'Country/Region': 'country', 'Province/State': 'state', 'Lat': 'lat', 'Long': 'lon'})
+    ds = ds.set_coords(['country', 'state', 'lat', 'lon'])
+    da = ds.to_array('date')
+    time = ['2020-%02d-%02d' % tuple(map(int, d.split('/')[:2])) for d in da.date.values]
+    location = [' / '.join(i for i in items if i) for items in zip(da.country.values, da.state.values)]
+    da = da.assign_coords({
+        'time': ('date', np.array(time, 'datetime64')),
+        'location': ('index', location)
+    })
+    da = da.swap_dims({'date': 'time', 'index': 'location'})
+    da = da.drop(['index', 'date', 'state'])
+    return da
+
+
+def jhu_usa_to_xarray(path):
+    df = pd.read_csv(path, keep_default_na=False)
+    ds = df.to_xarray()
+    ds = ds.rename({'Country_Region': 'country', 'Province_State': 'state', 'Admin2': 'county', 'Lat': 'lat', 'Long_': 'lon', 'Population': 'population'})
+    ds = ds.set_coords(['country', 'state', 'county', 'lat', 'lon', 'population'])
+    ds = ds.drop(['UID', 'iso2', 'iso3', 'code3', 'FIPS', 'Combined_Key'])
+    da = ds.to_array('date')
+    time = ['2020-%02d-%02d' % tuple(map(int, d.split('/')[:2])) for d in da.date.values]
+    location = [' / '.join(i for i in items if i) for items in zip(da.country.values, da.state.values, da.county.values)]
+    da = da.assign_coords({
+        'time': ('date', np.array(time, 'datetime64')),
+        'location': ('index', location)
+    })
+    da = da.swap_dims({'date': 'time', 'index': 'location'})
+    da = da.drop(['index', 'date', 'county'])
+    return da
+
+
 def istat_to_pandas(path, drop=True):
     istat = pd.read_csv(path, encoding='8859', na_values=9999)
 
@@ -103,10 +151,23 @@ def istat_to_pandas(path, drop=True):
     return istat
 
 
-def istat_to_xarray(path):
-    istat = istat_to_pandas(path)
-    tmp = istat.groupby(['time', 'age_class', 'NOME_PROVINCIA']).agg(
-        deaths=('TOTALE_20', sum),
-    )
-    data = tmp.to_xarray().rename({'NOME_PROVINCIA': 'location'}).fillna(0)
-    return data.assign_coords({'region': ('location', istat.groupby(['NOME_PROVINCIA'])['NOME_REGIONE'].first())})
+def istat_to_xarray(path, **kwargs):
+    istat = istat_to_pandas(path, **kwargs)
+    tmp = istat.groupby(['time', 'age_class', 'NOME_COMUNE']).agg(**{
+        '2015': ('TOTALE_15', sum),
+        '2016': ('TOTALE_16', sum),
+        '2017': ('TOTALE_17', sum),
+        '2018': ('TOTALE_18', sum),
+        '2019': ('TOTALE_19', sum),
+        '2020': ('TOTALE_20', sum),
+    })
+    data = tmp.to_xarray().rename({'NOME_COMUNE': 'location'}).fillna(0)
+    data = data.to_array('year')
+
+    coords = {
+        'region': ('location', istat.groupby(['NOME_COMUNE'])['NOME_REGIONE'].first()),
+        'province': ('location', istat.groupby(['NOME_COMUNE'])['NOME_PROVINCIA'].first()),
+        'year': ('year', data.coords['year'].astype(int))
+    }
+    data = data.assign_coords(coords)
+    return istat, data
