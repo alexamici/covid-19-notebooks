@@ -8,6 +8,7 @@ dependencies:
   - black
   - cdsapi
   - cfgrib
+  - netcdf4
   - notebook
   - pandas
   - requests
