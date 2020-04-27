@@ -3,7 +3,7 @@ import numpy as np
 import scipy.optimize
 
 
-DAY = np.timedelta64(24 * 3600, 's')
+DAY = np.timedelta64(24 * 3600, "s")
 
 
 def exp2(t, t_0, T_d):
@@ -36,7 +36,9 @@ class ExponentialFit:
         x_norm = linear(data_fit.index.values, t_0_guess, T_d_guess)
         log2_y = np.log2(data_fit.values)
 
-        t_fit = data_fit.index.values[np.isfinite(log2_y) & (data_fit.values >= min_value)]
+        t_fit = data_fit.index.values[
+            np.isfinite(log2_y) & (data_fit.values >= min_value)
+        ]
         x_fit = x_norm[np.isfinite(log2_y) & (data_fit.values >= min_value)]
         log2_y_fit = log2_y[np.isfinite(log2_y) & (data_fit.values >= min_value)]
 
@@ -73,12 +75,14 @@ class ExponentialFit:
     def scale(self, scale):
         offset = -np.log2(scale) * self.T_d
         t_0 = self.t_0 + offset
-        return self.__class__(t_0, self.T_d, r2=self.r2, start=self.start, stop=self.stop)
+        return self.__class__(
+            t_0, self.T_d, r2=self.r2, start=self.start, stop=self.stop
+        )
 
 
 def find_best_fits_size(y, data, size):
     fits = []
-    for start, stop in zip(data.index, data.index[size - 1:]):
+    for start, stop in zip(data.index, data.index[size - 1 :]):
         fits.append(ExponentialFit.from_frame(y, data, start, stop))
     return sorted(fits, key=lambda x: -x.r2)
 
@@ -93,7 +97,7 @@ def find_best_fits(y, data, min_r2=0.99, min_size=3, max_size=16):
 
 
 def fit_exponential_segments(data, breaks=(None, None), break_length=DAY):
-    starts = [np.datetime64(b, 's') if b is not None else b for b in breaks]
+    starts = [np.datetime64(b, "s") if b is not None else b for b in breaks]
     stops = [s - break_length if s is not None else s for s in starts[1:]]
     exponential_segments = []
     for start, stop in zip(starts, stops):
