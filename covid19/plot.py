@@ -8,7 +8,7 @@ import pandas as pd
 import seaborn as sns
 
 
-DAY = np.timedelta64(24 * 3600, 's')
+DAY = np.timedelta64(24 * 3600, "s")
 PALETTE = itertools.cycle(sns.color_palette())
 LOG2 = math.log(2)
 
@@ -41,28 +41,54 @@ def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), color=None):
 
 
 def plot_data(
-    ax, data, start=None, stop=None, label=None, color=None, date_interval=7, kind='scatter',
-    delay=None, ratio=None, show_left=False, show_right=False, drop_negative=True, **kwargs
+    ax,
+    data,
+    start=None,
+    stop=None,
+    label=None,
+    color=None,
+    date_interval=7,
+    kind="scatter",
+    delay=None,
+    ratio=None,
+    show_left=False,
+    show_right=False,
+    drop_negative=True,
+    **kwargs,
 ):
     plot_kwargs = {"color": color or next(PALETTE)}
     plot_kwargs.update(kwargs)
 
     data_to_plot = data.copy()
     if delay is not None:
-        data_to_plot.index = data_to_plot.index - delay * np.timedelta64(24 * 3600, 's')
+        data_to_plot.index = data_to_plot.index - delay * np.timedelta64(24 * 3600, "s")
     if ratio is not None:
         data_to_plot = data_to_plot / ratio
     if drop_negative:
         data_to_plot = data_to_plot[data_to_plot > 0]
 
-    if kind=='scatter':
-        sns.scatterplot(ax=ax, data=data_to_plot[start:stop], label=label, s=60, **plot_kwargs)
+    if kind == "scatter":
+        sns.scatterplot(
+            ax=ax, data=data_to_plot[start:stop], label=label, s=60, **plot_kwargs
+        )
     else:
         sns.lineplot(ax=ax, data=data_to_plot, label=label, **plot_kwargs)
     if show_left and start is not None:
-        sns.scatterplot(data=data_to_plot[data_to_plot.index < start], marker="o", s=60, **plot_kwargs)
+        sns.scatterplot(
+            data=data_to_plot[data_to_plot.index < start],
+            marker="o",
+            s=60,
+            **plot_kwargs,
+        )
     if show_right and stop is not None:
-        sns.scatterplot(data=data_to_plot[data_to_plot.index > stop], marker="o", s=80, facecolors='none', edgecolor=color, **plot_kwargs)
+        sns.scatterplot(
+            data=data_to_plot[data_to_plot.index > stop],
+            marker="o",
+            s=80,
+            facecolors="none",
+            edgecolor=color,
+            **plot_kwargs,
+        )
 
     ax.yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
@@ -70,31 +96,44 @@ def plot_data(
     ax.xaxis.set_tick_params()
 
 
-def plot(ax, data, fit=None, label=None, extrapolate=(-2, 2), color=None, add_diff=True, **kwargs):
+def plot(
+    ax,
+    data,
+    fit=None,
+    label=None,
+    extrapolate=(-2, 2),
+    color=None,
+    add_diff=True,
+    **kwargs,
+):
     color = color or next(PALETTE)
     if fit is not None:
         plot_fit(ax, fit, label=label, extrapolate=extrapolate, color=color)
     plot_data(ax, data, fit.start, fit.stop, color=color, **kwargs)
     if add_diff:
-        diff = data[fit.start:fit.stop].diff(1) * fit.T_d_days / LOG2
+        diff = data[fit.start : fit.stop].diff(1) * fit.T_d_days / LOG2
         plot_data(ax, diff, color=color, alpha=0.4)
 
 
 ITALY_EVENTS = [
     # {'x': '2020-02-19', 'label': 'First alarm'},
-    {'x': '2020-02-24', 'label': 'Chiusura scuole al nord'},
-    {'x': '2020-03-01', 'label': 'Lockdown parziale al nord'},
-    {'x': '2020-03-05', 'label': 'Chiusura scuole in Italia'},
-    {'x': '2020-03-08', 'label': 'Lockdown al nord'},
-    {'x': '2020-03-10', 'label': 'Lockdown parziale in Italia'},
-    {'x': '2020-03-12', 'label': 'Lockdown in Italia'},
+    {"x": "2020-02-24", "label": "Chiusura scuole al nord"},
+    {"x": "2020-03-01", "label": "Lockdown parziale al nord"},
+    {"x": "2020-03-05", "label": "Chiusura scuole in Italia"},
+    {"x": "2020-03-08", "label": "Lockdown al nord"},
+    {"x": "2020-03-10", "label": "Lockdown parziale in Italia"},
+    {"x": "2020-03-12", "label": "Lockdown in Italia"},
 ]
 
 
 def add_events(ax, events=ITALY_EVENTS, offset=0, **kwargs):
     for event in events:
-        label = '{x} + {offset} {label}'.format(offset=offset, **event)
-        ax.axvline(x=np.datetime64(event['x']) + np.timedelta64(offset * 24 * 60 * 60, 's'), label=label, **kwargs)
+        label = "{x} + {offset} {label}".format(offset=offset, **event)
+        ax.axvline(
+            x=np.datetime64(event["x"]) + np.timedelta64(offset * 24 * 60 * 60, "s"),
+            label=label,
+            **kwargs,
+        )
 
 
 def subplots(*args, **kwargs):
@@ -102,14 +141,24 @@ def subplots(*args, **kwargs):
 
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
-    ax.yaxis.grid(color='lightgrey', linewidth=0.5)
+    ax.yaxis.grid(color="lightgrey", linewidth=0.5)
 
-    ax.xaxis.grid(color='lightgrey', linewidth=0.5)
+    ax.xaxis.grid(color="lightgrey", linewidth=0.5)
 
     return f, ax
 
 
-def plot_xarray(data, foreground_hue=None, x='time', ax=None, hue='age_class', window=1, foreground_interval=(None, None), ylim=(0, None), **kwargs):
+def plot_xarray(
+    data,
+    foreground_hue=None,
+    x="time",
+    ax=None,
+    hue="age_class",
+    window=1,
+    foreground_interval=(None, None),
+    ylim=(0, None),
+    **kwargs,
+):
     if ax is None:
         _, ax = subplots()
 
@@ -125,14 +174,33 @@ def plot_xarray(data, foreground_hue=None, x='time', ax=None, hue='age_class', w
 
     for h, color in zip(sorted(data[hue].values, reverse=True), sns.color_palette()):
         label = None if foreground_hue is None or h in foreground_hue else h
-        ax.plot(data[x], data.sel({hue: h}), linewidth=2.5, alpha=.25, color=color, label=label)
+        ax.plot(
+            data[x],
+            data.sel({hue: h}),
+            linewidth=2.5,
+            alpha=0.25,
+            color=color,
+            label=label,
+        )
         if foreground_hue is None or h in foreground_hue:
-            ax.plot(foreground_data[x], foreground_data.sel({hue: h}), linewidth=2.5, alpha=.8, color=color, label=h)
+            ax.plot(
+                foreground_data[x],
+                foreground_data.sel({hue: h}),
+                linewidth=2.5,
+                alpha=0.8,
+                color=color,
+                label=h,
+            )
 
     if foreground_interval[1] is not None:
         ax.set(ylim=ylim)
         ylim = ax.get_ylim()
-        ax.fill([np.datetime64(foreground_interval[1])] * 2 + [data_stop] * 2, [ylim[0], ylim[1], ylim[1], ylim[0]], 'grey', alpha=0.1)
+        ax.fill(
+            [np.datetime64(foreground_interval[1])] * 2 + [data_stop] * 2,
+            [ylim[0], ylim[1], ylim[1], ylim[0]],
+            "grey",
+            alpha=0.1,
+        )
         ax.set(ylim=ylim)
 
     ax.set(**kwargs)
