@@ -225,13 +225,11 @@ def istat_to_xarray(path, **kwargs):
 
 def interp_on_observations(gridded, observed, index="location"):
     if isinstance(observed, xr.DataArray):
-        observed = observed.coords
+        observed = {name: values.values for name, values in observed.coords.items()}
     interp_dims = set(gridded.dims) & set(observed)
     interpolated = []
     coords = {
-        dim: observed[dim].values % 360.0
-        if dim == "lon"
-        else observed[dim].values
+        dim: observed[dim] % 360.0 if dim == "lon" else observed[dim]
         for dim in interp_dims
     }
     for coord_values in zip(*coords.values()):
@@ -239,3 +237,7 @@ def interp_on_observations(gridded, observed, index="location"):
         interpolated.append(gridded.sel(**selection, method="nearest"))
     data = xr.concat(interpolated, dim=index)
     return data.assign_coords({index: (index, observed[index])})
+
+
+def read_outbreaks_metadata(path):
+    return pd.read_csv(path).to_dict(orient="records")
