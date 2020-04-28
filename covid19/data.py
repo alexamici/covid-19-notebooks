@@ -1,4 +1,5 @@
 import pathlib
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -64,6 +65,7 @@ REFORMAT = {
 
 
 def reformat(path, kind="world"):
+    warnings.warn("deprecatred")
     raw_data = pd.read_csv(path)
     date_start = REFORMAT[kind]["date_start"]
     country = REFORMAT[kind]["country"]
@@ -125,7 +127,7 @@ def jhu_global_to_xarray(path):
     return da
 
 
-def jhu_usa_to_xarray(path):
+def read_jhu_usa(path):
     df = pd.read_csv(path, keep_default_na=False)
     ds = df.to_xarray()
     ds = ds.rename(
@@ -196,7 +198,7 @@ def istat_to_pandas(path, drop=True):
     return istat
 
 
-def istat_to_xarray(path, **kwargs):
+def read_istat(path, **kwargs):
     istat = istat_to_pandas(path, **kwargs)
     tmp = istat.groupby(["time", "age_class", "NOME_COMUNE"]).agg(
         **{
@@ -221,6 +223,26 @@ def istat_to_xarray(path, **kwargs):
     }
     data = data.assign_coords(coords)
     return istat, data
+
+
+def read_dpc(path):
+    df = pd.read_csv(path, parse_dates=['data'], index_col=['data'])
+    df.index = df.index.normalize().rename('time')
+    df['location'] = 'Italy / ' + df['denominazione_regione']
+    df = df.set_index('location', append=True)
+    ds = df[['ricoverati_con_sintomi', 'terapia_intensiva', 'deceduti']].to_xarray()
+    ds = ds.assign_coords({
+        'lat': ('location', df.groupby('location')['lat'].first()),
+        'lon': ('location', df.groupby('location')['long'].first()),
+        'country': ('location', ['Italy'] * ds.location.size),
+        'location': ('location', [str(l) for l in ds.location.values]),
+    })
+    ds = ds.rename({
+        'ricoverati_con_sintomi': 'current_severe',
+        'terapia_intensiva': 'current_critical',
+        'deceduti': 'deaths',
+    })
+    return ds
 
 
 def interp_on_observations(gridded, observed, index="location"):
