@@ -1,6 +1,9 @@
+import math
+
 import attr
 import numpy as np
 import scipy.optimize
+import xarray as xr
 
 
 DAY = np.timedelta64(24 * 3600, "s")
@@ -52,6 +55,32 @@ class ExponentialFit:
 
         return cls(t_0, T_d, r2=r2, start=t_fit[0], stop=t_fit[-1])
 
+    @classmethod
+    def from_xarray(cls, data, start=None, stop=None, p0=P0, min_value=5, x="time"):
+        assert isinstance(data, xr.DataArray)
+        t_0_guess, T_d_guess = p0
+
+        data_fit = data.sel(**{x: slice(start, stop)})
+
+        x_norm = linear(data_fit.coords[x].values, t_0_guess, T_d_guess)
+        log2_y = np.log2(data_fit.values)
+
+        t_fit = data_fit.coords[x].values[
+            np.isfinite(log2_y) & (data_fit.values >= min_value)
+        ]
+        x_fit = x_norm[np.isfinite(log2_y) & (data_fit.values >= min_value)]
+        log2_y_fit = log2_y[np.isfinite(log2_y) & (data_fit.values >= min_value)]
+
+        # (t_0_norm, T_d_norm), covariance = scipy.optimize.curve_fit(linear, x_fit, log2_y_fit)
+        m, y, r2, _, _ = scipy.stats.linregress(x_fit, log2_y_fit)
+        t_0_norm = -y / m
+        T_d_norm = 1 / m
+
+        T_d = T_d_norm * T_d_guess
+        t_0 = t_0_guess + t_0_norm * T_d_guess
+
+        return cls(t_0, T_d, r2=r2, start=t_fit[0], stop=t_fit[-1])
+
     @property
     def T_d_days(self):
         return self.T_d / np.timedelta64(1, "D")
@@ -70,7 +99,7 @@ class ExponentialFit:
         t_0 = self.t_0 + offset
         start = np.datetime64(self.start) + offset
         stop = np.datetime64(self.stop) + offset
-        return self.__class__(t_0, self.T_d, start=start, stop=stop)
+        return self.__class__(t_0, self.T_d, r2=self.r2, start=start, stop=stop)
 
     def scale(self, scale):
         offset = -np.log2(scale) * self.T_d
@@ -102,9 +131,35 @@ def fit_exponential_segments(data, breaks=(None, None), break_length=DAY):
     exponential_segments = []
     for start, stop in zip(starts, stops):
         try:
-            fit = ExponentialFit.from_frame(data, start=start, stop=stop)
+            if isinstance(data, xr.DataArray):
+                fit = ExponentialFit.from_xarray(data, start=start, stop=stop)
+            else:
+                fit = ExponentialFit.from_frame(data, start=start, stop=stop)
             if np.isfinite(fit.T_d):
                 exponential_segments.append(fit)
         except ValueError:
             print(f"skipping start={start} stop={stop}")
     return exponential_segments
+
+
+def fit_exponential_outbreaks(sources, outbreaks):
+    exponential_outbreaks = []
+    for o in outbreaks:
+        outbreak = o.copy()
+        for source in sources:
+            if outbreak["location"] in source.location:
+                data = source.sel(location=outbreak["location"])
+                try:
+                    fit = ExponentialFit.from_xarray(
+                        data, outbreak["start"], outbreak["stop"]
+                    )
+                except:
+                    continue
+                outbreak["fit"] = fit
+                if math.isnan(outbreak["lat"]):
+                    outbreak["lat"] = float(data.lat.values)
+                if math.isnan(outbreak["lon"]):
+                    outbreak["lon"] = float(data.lon.values)
+                exponential_outbreaks.append(outbreak)
+                break
+    return exponential_outbreaks
