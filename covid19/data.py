@@ -125,7 +125,7 @@ def read_jhu_global(path):
     )
     da = da.swap_dims({"date": "time", "index": "location"})
     da = da.drop(["index", "date", "state"])
-    return da.to_dataset(name='deaths')
+    return da.to_dataset(name="deaths")
 
 
 def read_jhu_usa(path):
@@ -141,7 +141,7 @@ def read_jhu_usa(path):
             "Population": "population",
         }
     )
-    ds = ds.assign_coords({'state': ('index', 'US / ' + ds.state)})
+    ds = ds.assign_coords({"state": ("index", "US / " + ds.state)})
     ds = ds.set_coords(["country", "state", "county", "lat", "lon", "population"])
     ds = ds.drop(["UID", "iso2", "iso3", "code3", "FIPS", "Combined_Key"])
     da = ds.to_array("date")
@@ -153,13 +153,13 @@ def read_jhu_usa(path):
             "country": ("index", da.country.astype(str)),
             "state": ("index", da.state.astype(str)),
             "time": ("date", np.array(time, "datetime64")),
-            "location": ("index", (ds.state + ' / ' + ds.county).astype(str)),
+            "location": ("index", (ds.state + " / " + ds.county).astype(str)),
         }
     )
     da = da.swap_dims({"date": "time", "index": "location"})
     da = da.drop(["index", "date", "county"])
-    ds = da.to_dataset(name='deaths')
-    return ds.reset_coords('population')
+    ds = da.to_dataset(name="deaths")
+    return ds.reset_coords("population")
 
 
 def istat_to_pandas(path, drop=True):
@@ -215,7 +215,10 @@ def read_istat(path, **kwargs):
     data = data.to_array("year")
 
     coords = {
-        "region": ("location", 'Italy / ' + istat.groupby(["NOME_COMUNE"])["NOME_REGIONE"].first()),
+        "region": (
+            "location",
+            "Italy / " + istat.groupby(["NOME_COMUNE"])["NOME_REGIONE"].first(),
+        ),
         "province": (
             "location",
             istat.groupby(["NOME_COMUNE"])["NOME_PROVINCIA"].first(),
@@ -227,28 +230,32 @@ def read_istat(path, **kwargs):
 
 
 def read_dpc(path):
-    df = pd.read_csv(path, parse_dates=['data'], index_col=['data'])
-    df.index = df.index.normalize().rename('time')
-    df['location'] = 'Italy / ' + df['denominazione_regione']
-    df = df.set_index('location', append=True)
-    ds = df[['ricoverati_con_sintomi', 'terapia_intensiva', 'deceduti']].to_xarray()
-    ds = ds.assign_coords({
-        'lat': ('location', df.groupby('location')['lat'].first()),
-        'lon': ('location', df.groupby('location')['long'].first()),
-        'country': ('location', ['Italy'] * ds.location.size),
-        'location': ('location', [str(l) for l in ds.location.values]),
-    })
-    ds = ds.rename({
-        'ricoverati_con_sintomi': 'current_severe',
-        'terapia_intensiva': 'current_critical',
-        'deceduti': 'deaths',
-    })
+    df = pd.read_csv(path, parse_dates=["data"], index_col=["data"])
+    df.index = df.index.normalize().rename("time")
+    df["location"] = "Italy / " + df["denominazione_regione"]
+    df = df.set_index("location", append=True)
+    ds = df[["ricoverati_con_sintomi", "terapia_intensiva", "deceduti"]].to_xarray()
+    ds = ds.assign_coords(
+        {
+            "lat": ("location", df.groupby("location")["lat"].first()),
+            "lon": ("location", df.groupby("location")["long"].first()),
+            "country": ("location", ["Italy"] * ds.location.size),
+            "location": ("location", [str(l) for l in ds.location.values]),
+        }
+    )
+    ds = ds.rename(
+        {
+            "ricoverati_con_sintomi": "current_severe",
+            "terapia_intensiva": "current_critical",
+            "deceduti": "deaths",
+        }
+    )
     population = {
-        'Lombardia': 10018806,
-        'Lazio': 5898124,
-        'Campania': 5839084,
-        'Sicilia': 5056641,
-        'Veneto': 4907529,
+        "Lombardia": 10018806,
+        "Lazio": 5898124,
+        "Campania": 5839084,
+        "Sicilia": 5056641,
+        "Veneto": 4907529,
         "Emilia-Romagna": 4448841,
         "Piemonte": 4392526,
         "Puglia": 4063888,
@@ -266,7 +273,14 @@ def read_dpc(path):
         "P.A. Bolzano": 524256,
         "P.A. Trento": 538604,
     }
-    ds = ds.assign({'population': ('location', [population[l.partition(' / ')[2]] for l in ds.location.values])})
+    ds = ds.assign(
+        {
+            "population": (
+                "location",
+                [population[l.partition(" / ")[2]] for l in ds.location.values],
+            )
+        }
+    )
     return ds
 
 
