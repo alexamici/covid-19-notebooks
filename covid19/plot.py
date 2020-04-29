@@ -63,8 +63,10 @@ def plot_data(
 
     data_to_plot = data
     if delay is not None:
+        if isinstance(delay, (int, float)):
+            delay = delay * np.timedelta64(24 * 3600, "s")
         data_to_plot = data_to_plot.assign_coords(
-            {x: (x, data_to_plot.x + delay * np.timedelta64(24 * 3600, "s"))}
+            {x: (x, data_to_plot.coords[x] + delay)}
         )
     if ratio is not None:
         data_to_plot = data_to_plot / ratio

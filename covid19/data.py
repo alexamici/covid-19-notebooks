@@ -34,7 +34,7 @@ DATA_REPOS = {
 
 
 CDM_DIMS = {"location", "time", "age_class", "dayofyear", "month", "year"}
-CDM_COORDS = CDM_DIMS | {"country", "state", "region", "province", "lat", "lon"}
+CDM_COORDS = CDM_DIMS | {"country", "state_region", "lat", "lon"}
 
 
 def cdm_check(da):
@@ -116,11 +116,13 @@ def read_jhu_global(path):
         " / ".join(i for i in items if i)
         for items in zip(da.country.values, da.state.values)
     ]
+    state_region = da.country + " / " + da.state
     da = da.assign_coords(
         {
             "country": ("index", ds.country.astype(str)),
             "time": ("date", np.array(time, "datetime64")),
             "location": ("index", location),
+            "state_region": ("index", state_region.astype(str)),
         }
     )
     da = da.swap_dims({"date": "time", "index": "location"})
@@ -134,15 +136,17 @@ def read_jhu_usa(path):
     ds = ds.rename(
         {
             "Country_Region": "country",
-            "Province_State": "state",
+            "Province_State": "state_region",
             "Admin2": "county",
             "Lat": "lat",
             "Long_": "lon",
             "Population": "population",
         }
     )
-    ds = ds.assign_coords({"state": ("index", "US / " + ds.state)})
-    ds = ds.set_coords(["country", "state", "county", "lat", "lon", "population"])
+    ds = ds.assign_coords({"state_region": ("index", "US / " + ds.state_region)})
+    ds = ds.set_coords(
+        ["country", "state_region", "county", "lat", "lon", "population"]
+    )
     ds = ds.drop(["UID", "iso2", "iso3", "code3", "FIPS", "Combined_Key"])
     da = ds.to_array("date")
     time = [
@@ -151,9 +155,9 @@ def read_jhu_usa(path):
     da = da.assign_coords(
         {
             "country": ("index", da.country.astype(str)),
-            "state": ("index", da.state.astype(str)),
+            "state_region": ("index", da.state_region.astype(str)),
             "time": ("date", np.array(time, "datetime64")),
-            "location": ("index", (ds.state + " / " + ds.county).astype(str)),
+            "location": ("index", (ds.state_region + " / " + ds.county).astype(str)),
         }
     )
     da = da.swap_dims({"date": "time", "index": "location"})
@@ -241,6 +245,7 @@ def read_dpc(path):
             "lon": ("location", df.groupby("location")["long"].first()),
             "country": ("location", ["Italy"] * ds.location.size),
             "location": ("location", [str(l) for l in ds.location.values]),
+            "state_region": ("location", [str(l) for l in ds.location.values]),
         }
     )
     ds = ds.rename(

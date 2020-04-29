@@ -31,7 +31,7 @@ class ExponentialFit:
     stop = attr.attrib()
 
     @classmethod
-    def from_frame(cls, data, start=None, stop=None, p0=P0, min_value=5):
+    def from_frame(cls, data, start=None, stop=None, p0=P0, min_value=9):
         t_0_guess, T_d_guess = p0
 
         data_fit = data[start:stop]
@@ -56,7 +56,7 @@ class ExponentialFit:
         return cls(t_0, T_d, r2=r2, start=t_fit[0], stop=t_fit[-1])
 
     @classmethod
-    def from_xarray(cls, data, start=None, stop=None, p0=P0, min_value=5, x="time"):
+    def from_xarray(cls, data, start=None, stop=None, p0=P0, min_value=9, x="time"):
         assert isinstance(data, xr.DataArray)
         t_0_guess, T_d_guess = p0
 
