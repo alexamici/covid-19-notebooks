@@ -36,7 +36,8 @@ def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), color=None):
     x_fit = pd.date_range(fit.start, fit.stop, freq="D").values
     y_fit = fit.predict(x_fit)
     if label:
-        label = f"{label} - $T_d={fit.T_d_days:.1f}$ giorni, $r^2={fit.r2:.3f}$"
+        # label = f"{label} - $T_d={fit.T_d_days:.1f}$ giorni, $r^2={fit.r2:.3f}$"
+        label = f"$T_d={fit.T_d_days:.1f}$ days - {label}"
     ax.plot(x_fit, y_fit, ".-", label=label, **plot_kwargs)
 
 
@@ -54,25 +55,26 @@ def plot_data(
     show_left=False,
     show_right=False,
     drop_negative=True,
+    x="time",
     **kwargs,
 ):
     plot_kwargs = {"color": color or next(PALETTE)}
     plot_kwargs.update(kwargs)
 
-    data_to_plot = data.copy()
+    data_to_plot = data
     if delay is not None:
-        data_to_plot.index = data_to_plot.index - delay * np.timedelta64(24 * 3600, "s")
+        data_to_plot = data_to_plot.assign_coords(
+            {x: (x, data_to_plot.x + delay * np.timedelta64(24 * 3600, "s"))}
+        )
     if ratio is not None:
         data_to_plot = data_to_plot / ratio
     if drop_negative:
         data_to_plot = data_to_plot[data_to_plot > 0]
 
-    if kind == "scatter":
-        sns.scatterplot(
-            ax=ax, data=data_to_plot[start:stop], label=label, s=60, **plot_kwargs
-        )
-    else:
-        sns.lineplot(ax=ax, data=data_to_plot, label=label, **plot_kwargs)
+    # if kind == "scatter":
+    data_to_plot.sel(**{x: slice(start, stop)}).plot(ax=ax, label=label, **plot_kwargs)
+    # else:
+    #    sns.lineplot(ax=ax, data=data_to_plot, label=label, **plot_kwargs)
     if show_left and start is not None:
         sns.scatterplot(
             data=data_to_plot[data_to_plot.index < start],
@@ -103,7 +105,7 @@ def plot(
     label=None,
     extrapolate=(-2, 2),
     color=None,
-    add_diff=True,
+    add_diff=False,
     **kwargs,
 ):
     color = color or next(PALETTE)
