@@ -96,7 +96,7 @@ def reformat(path, kind="world"):
     return pd.DataFrame(lines.values()).set_index("date")
 
 
-def jhu_global_to_xarray(path):
+def read_jhu_global(path):
     df = pd.read_csv(path, keep_default_na=False)
     ds = df.to_xarray()
     ds = ds.rename(
@@ -118,13 +118,14 @@ def jhu_global_to_xarray(path):
     ]
     da = da.assign_coords(
         {
+            "country": ("index", ds.country.astype(str)),
             "time": ("date", np.array(time, "datetime64")),
             "location": ("index", location),
         }
     )
     da = da.swap_dims({"date": "time", "index": "location"})
     da = da.drop(["index", "date", "state"])
-    return da
+    return da.to_dataset(name='deaths')
 
 
 def read_jhu_usa(path):
@@ -140,25 +141,25 @@ def read_jhu_usa(path):
             "Population": "population",
         }
     )
+    ds = ds.assign_coords({'state': ('index', 'US / ' + ds.state)})
     ds = ds.set_coords(["country", "state", "county", "lat", "lon", "population"])
     ds = ds.drop(["UID", "iso2", "iso3", "code3", "FIPS", "Combined_Key"])
     da = ds.to_array("date")
     time = [
         "2020-%02d-%02d" % tuple(map(int, d.split("/")[:2])) for d in da.date.values
     ]
-    location = [
-        " / ".join(i for i in items if i)
-        for items in zip(da.country.values, da.state.values, da.county.values)
-    ]
     da = da.assign_coords(
         {
+            "country": ("index", da.country.astype(str)),
+            "state": ("index", da.state.astype(str)),
             "time": ("date", np.array(time, "datetime64")),
-            "location": ("index", location),
+            "location": ("index", (ds.state + ' / ' + ds.county).astype(str)),
         }
     )
     da = da.swap_dims({"date": "time", "index": "location"})
     da = da.drop(["index", "date", "county"])
-    return da
+    ds = da.to_dataset(name='deaths')
+    return ds.reset_coords('population')
 
 
 def istat_to_pandas(path, drop=True):
@@ -214,7 +215,7 @@ def read_istat(path, **kwargs):
     data = data.to_array("year")
 
     coords = {
-        "region": ("location", istat.groupby(["NOME_COMUNE"])["NOME_REGIONE"].first()),
+        "region": ("location", 'Italy / ' + istat.groupby(["NOME_COMUNE"])["NOME_REGIONE"].first()),
         "province": (
             "location",
             istat.groupby(["NOME_COMUNE"])["NOME_PROVINCIA"].first(),
@@ -242,6 +243,30 @@ def read_dpc(path):
         'terapia_intensiva': 'current_critical',
         'deceduti': 'deaths',
     })
+    population = {
+        'Lombardia': 10018806,
+        'Lazio': 5898124,
+        'Campania': 5839084,
+        'Sicilia': 5056641,
+        'Veneto': 4907529,
+        "Emilia-Romagna": 4448841,
+        "Piemonte": 4392526,
+        "Puglia": 4063888,
+        "Toscana": 3742437,
+        "Calabria": 1965128,
+        "Sardegna": 1653135,
+        "Liguria": 1565307,
+        "Marche": 1538055,
+        "Abruzzo": 1322247,
+        "Friuli Venezia Giulia": 1217872,
+        "Umbria": 888908,
+        "Basilicata": 570365,
+        "Molise": 310449,
+        "Valle d'Aosta": 126883,
+        "P.A. Bolzano": 524256,
+        "P.A. Trento": 538604,
+    }
+    ds = ds.assign({'population': ('location', [population[l.partition(' / ')[2]] for l in ds.location.values])})
     return ds
 
 
