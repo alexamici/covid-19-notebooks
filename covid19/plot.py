@@ -49,7 +49,8 @@ def plot_data(
     label=None,
     color=None,
     date_interval=7,
-    kind="scatter",
+    marker="o",
+    markersize=3,
     delay=None,
     ratio=None,
     show_left=False,
@@ -58,7 +59,11 @@ def plot_data(
     x="time",
     **kwargs,
 ):
-    plot_kwargs = {"color": color or next(PALETTE)}
+    plot_kwargs = {
+        "color": color or next(PALETTE),
+        "markersize": markersize,
+        "marker": marker,
+    }
     plot_kwargs.update(kwargs)
 
     data_to_plot = data
