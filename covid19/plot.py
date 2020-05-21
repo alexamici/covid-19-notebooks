@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import xarray as xr
 
 
 DAY = np.timedelta64(24 * 3600, "s")
@@ -13,7 +14,7 @@ PALETTE = itertools.cycle(sns.color_palette())
 LOG2 = math.log(2)
 
 
-def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), color=None):
+def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), color=None, **kwargs):
     extrapolate_start, extrapolate_stop = extrapolate
 
     if isinstance(extrapolate_start, int):
@@ -29,7 +30,7 @@ def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), color=None):
     x_predict = pd.date_range(extrapolate_start, extrapolate_stop, freq="D")
     y_predict = fit.predict(x_predict)
 
-    plot_kwargs = {"color": color or next(PALETTE)}
+    plot_kwargs = {"color": color or next(PALETTE), **kwargs}
 
     ax.plot(x_predict, y_predict, ":", **plot_kwargs)
 
@@ -166,6 +167,7 @@ def plot_xarray(
     window=1,
     foreground_interval=(None, None),
     ylim=(0, None),
+    alpha=0.8,
     **kwargs,
 ):
     if ax is None:
@@ -181,13 +183,15 @@ def plot_xarray(
 
     foreground_data = data.sel({x: slice(*foreground_interval)})
 
-    for h, color in zip(sorted(data[hue].values, reverse=True), sns.color_palette()):
+    for h, color in zip(
+        data[hue].values, itertools.cycle(sns.color_palette())
+    ):
         label = None if foreground_hue is None or h in foreground_hue else h
         ax.plot(
             data[x],
             data.sel({hue: h}),
             linewidth=2.5,
-            alpha=0.25,
+            alpha=alpha / 4,
             color=color,
             label=label,
         )
@@ -196,7 +200,7 @@ def plot_xarray(
                 foreground_data[x],
                 foreground_data.sel({hue: h}),
                 linewidth=2.5,
-                alpha=0.8,
+                alpha=alpha,
                 color=color,
                 label=h,
             )
@@ -213,5 +217,25 @@ def plot_xarray(
         ax.set(ylim=ylim)
 
     ax.set(**kwargs)
+
+    return ax
+
+
+def scatter_xarray(x, y, hue="location", time="time", ax=None, window=1, **kwargs):
+    if ax is None:
+        _, ax = subplots()
+
+    if window != 1:
+        x = x.rolling({time: window}, center=True).mean().dropna(time)
+        y = y.rolling({time: window}, center=True).mean().dropna(time)
+
+    x, y = xr.align(x, y)
+
+    for h, color in zip(x[hue].values, itertools.cycle(sns.color_palette())):
+        xx = x.sel(**{hue: h}).values
+        yy = y.sel(**{hue: h}).values
+        ax.plot(xx, yy, "-", color=color, alpha=0.3, linewidth=2)
+        ax.plot(xx[-1:], yy[-1:], "o", color=color, label=h, **kwargs)
+        ax.annotate(h, (xx[-1:] * 1.02, yy[-1:] * 0.85), color=color)
 
     return ax
