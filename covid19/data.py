@@ -12,7 +12,7 @@ DATA_REPOS = {
         "url": "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master",
         "streams": {
             "deaths": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv",
-            "cases": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",
+            "confirmed": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",
         },
     },
     "italy": {
@@ -27,7 +27,7 @@ DATA_REPOS = {
         "url": "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master",
         "streams": {
             "deaths": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv",
-            "cases": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv",
+            "confirmed": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv",
         },
     },
 }
@@ -130,8 +130,8 @@ def read_jhu_global(path):
     return da.to_dataset(name="deaths")
 
 
-def read_jhu_usa(path):
-    df = pd.read_csv(path, keep_default_na=False)
+def read_jhu_usa(deaths_path):
+    df = pd.read_csv(deaths_path, keep_default_na=False)
     ds = df.to_xarray()
     ds = ds.rename(
         {
@@ -140,14 +140,15 @@ def read_jhu_usa(path):
             "Admin2": "county",
             "Lat": "lat",
             "Long_": "lon",
-            "Population": "population",
         }
     )
     ds = ds.assign_coords({"state_region": ("index", "US / " + ds.state_region)})
-    ds = ds.set_coords(
-        ["country", "state_region", "county", "lat", "lon", "population"]
-    )
+    ds = ds.set_coords(["country", "state_region", "county", "lat", "lon"])
     ds = ds.drop(["UID", "iso2", "iso3", "code3", "FIPS", "Combined_Key"])
+    if "Population" in ds:
+        # confirmed dataset has no population
+        ds = ds.rename({"Population": "population"})
+        ds = ds.set_coords(["population"])
     da = ds.to_array("date")
     time = [
         "2020-%02d-%02d" % tuple(map(int, d.split("/")[:2])) for d in da.date.values
@@ -162,12 +163,15 @@ def read_jhu_usa(path):
     )
     da = da.swap_dims({"date": "time", "index": "location"})
     da = da.drop(["index", "date", "county"])
-    ds = da.to_dataset(name="deaths")
-    return ds.reset_coords("population")
+    if "population" in ds:
+        ds = da.to_dataset(name="deaths").reset_coords("population")
+    else:
+        ds = da.to_dataset(name="confirmed")
+    return ds
 
 
-def istat_to_pandas(path, drop=True):
-    istat = pd.read_csv(path, encoding="8859", na_values=9999)
+def istat_to_pandas(path):
+    istat = pd.read_csv(path, encoding="8859", na_values="n.d.")
 
     # make a date index from GE
     def ge2dayofyear(x):
@@ -197,9 +201,6 @@ def istat_to_pandas(path, drop=True):
 
     istat["age_class"] = istat["CL_ETA"].apply(cl_eta2age)
 
-    if drop:
-        istat = istat[np.isfinite(istat["TOTALE_20"])]
-
     return istat
 
 
@@ -207,15 +208,18 @@ def read_istat(path, **kwargs):
     istat = istat_to_pandas(path, **kwargs)
     tmp = istat.groupby(["time", "age_class", "NOME_COMUNE"]).agg(
         **{
-            "2015": ("TOTALE_15", sum),
-            "2016": ("TOTALE_16", sum),
-            "2017": ("TOTALE_17", sum),
-            "2018": ("TOTALE_18", sum),
-            "2019": ("TOTALE_19", sum),
-            "2020": ("TOTALE_20", sum),
+            "2015": ("T_15", sum),
+            "2016": ("T_16", sum),
+            "2017": ("T_17", sum),
+            "2018": ("T_18", sum),
+            "2019": ("T_19", sum),
         }
     )
-    data = tmp.to_xarray().rename({"NOME_COMUNE": "location"}).fillna(0)
+    tmp["2020"] = istat.groupby(["time", "age_class", "NOME_COMUNE"])["T_20"].sum(
+        min_count=1
+    )
+
+    data = tmp.to_xarray().rename({"NOME_COMUNE": "location"})  # .fillna(0)
     data = data.to_array("year")
 
     coords = {
@@ -238,7 +242,18 @@ def read_dpc(path):
     df.index = df.index.normalize().rename("time")
     df["location"] = "Italy / " + df["denominazione_regione"]
     df = df.set_index("location", append=True)
-    ds = df[["ricoverati_con_sintomi", "terapia_intensiva", "deceduti"]].to_xarray()
+    ds = df[
+        [
+            "ricoverati_con_sintomi",
+            "terapia_intensiva",
+            "deceduti",
+            "totale_positivi",
+            "totale_casi",
+            "tamponi",
+            "casi_testati",
+            "dimessi_guariti",
+        ]
+    ].to_xarray()
     ds = ds.assign_coords(
         {
             "lat": ("location", df.groupby("location")["lat"].first()),
@@ -252,7 +267,11 @@ def read_dpc(path):
         {
             "ricoverati_con_sintomi": "current_severe",
             "terapia_intensiva": "current_critical",
+            "totale_positivi": "current_confirmed",
             "deceduti": "deaths",
+            "totale_casi": "confirmed",
+            "tamponi": "tests",
+            "casi_testati": "tested",
         }
     )
     population = {
@@ -286,7 +305,7 @@ def read_dpc(path):
             )
         }
     )
-    return ds
+    return ds.fillna(0)
 
 
 def interp_on_observations(gridded, observed, index="location"):
