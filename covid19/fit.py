@@ -46,7 +46,10 @@ class ExponentialFit:
         log2_y_fit = log2_y[np.isfinite(log2_y) & (data_fit.values >= min_value)]
 
         # (t_0_norm, T_d_norm), covariance = scipy.optimize.curve_fit(linear, x_fit, log2_y_fit)
-        m, y, r2, _, _ = scipy.stats.linregress(x_fit, log2_y_fit)
+        try:
+            m, y, r2, _, _ = scipy.stats.linregress(x_fit, log2_y_fit)
+        except ValueError:
+            m, y, r2 = np.nan, np.nan, 0.
         t_0_norm = -y / m
         T_d_norm = 1 / m
 
@@ -72,7 +75,11 @@ class ExponentialFit:
         log2_y_fit = log2_y[np.isfinite(log2_y) & (data_fit.values >= min_value)]
 
         # (t_0_norm, T_d_norm), covariance = scipy.optimize.curve_fit(linear, x_fit, log2_y_fit)
-        m, y, r2, _, _ = scipy.stats.linregress(x_fit, log2_y_fit)
+        try:
+            m, y, r2, _, _ = scipy.stats.linregress(x_fit, log2_y_fit)
+        except ValueError:
+            m, y, r2 = np.nan, np.nan, 0.
+            t_fit = [start, stop]
         t_0_norm = -y / m
         T_d_norm = 1 / m
 
@@ -149,12 +156,9 @@ def fit_exponential_outbreaks(sources, outbreaks):
         for source in sources:
             if outbreak["location"] in source.location:
                 data = source.sel(location=outbreak["location"])
-                try:
-                    fit = ExponentialFit.from_xarray(
-                        data, outbreak["start"], outbreak["stop"]
-                    )
-                except:
-                    continue
+                fit = ExponentialFit.from_xarray(
+                    data, outbreak["start"], outbreak["stop"]
+                )
                 outbreak["fit"] = fit
                 if math.isnan(outbreak["lat"]):
                     outbreak["lat"] = float(data.lat.values)

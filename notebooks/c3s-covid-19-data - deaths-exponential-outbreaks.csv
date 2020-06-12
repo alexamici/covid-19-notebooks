@@ -1,35 +1,55 @@
 location,start,stop,lat,lon,notes
-China / Hubei,2020-01-21,2020-01-31,
-Italy / Lombardia,2020-02-24,2020-03-12,45.7,9.67,Bergamo
-Italy / Veneto,2020-03-05,2020-03-19,45.41,11.82,Padova
-Italy / Emilia-Romagna,2020-03-03,2020-03-16,44.67,10.59,Reggio Emilia
-Italy / Piemonte,2020-03-09,2020-03-16
-France,2020-03-05,2020-03-26,48.4,5.50
-Spain,2020-03-06,2020-03-17,
-United Kingdom,2020-03-19,2020-04-04,51.51,-0.13,London
-US / Washington / King,2020-03-04,2020-03-21,,,Seattle
-US / New York / New York,2020-03-19,2020-03-29
-US / Illinois / Cook,2020-03-22,2020-04-04,,,Chicago
-US / Michigan / Wayne,2020-03-22,2020-04-02,,,Detroit
-US / California / Los Angeles,2020-03-26,2020-04-08
-US / Massachusetts / Middlesex,2020-03-26,2020-04-19,,,Boston
-US / Pennsylvania / Philadelphia,2020-03-31,2020-04-13
-US / Florida,2020-03-21,2020-04-01
-US / Indiana,2020-03-19,2020-04-10
-Netherlands,2020-03-13,2020-03-22
-Germany,2020-03-14,2020-03-28
-Philippines,2020-03-15,2020-04-05
-Belgium,2020-03-17,2020-03-25,
-Sweden,2020-03-18,2020-04-03,59.32,18.01,Stockholm
-Norway,2020-03-23,2020-04-08
-Portugal,2020-03-21,2020-03-28
-Greece,2020-03-21,2020-04-01,38.01,23.81,Athens
-Indonesia,2020-03-22,2020-04-03
-Pakistan,2020-03-26,2020-04-06,31.31,73.88,Lahore
-Egypt,2020-03-23,2020-04-12
-Morocco,2020-03-27,2020-04-07,31.63,-8.01,Marrakesh
-Finland,2020-03-31,2020-04-26
-Iran,2020-02-27,2020-03-17,35.67,51.30,Tehran
-Brazil,2020-03-24,2020-04-09,-23.53,-46.63,SaoPaulo
+China / Hubei,2020-01-21,2020-01-31
 India,2020-03-20,2020-04-11,19.10,72.88,Mumbai
+# India,2020-04-11,2020-05-05,19.10,72.88,Mumbai
+#US / Washington / King,2020-03-04,2020-03-21,,,Seattle
+US / New York,2020-03-19,2020-03-29
+#US / Illinois / Cook,2020-03-22,2020-04-04,,,Chicago
+#US / Michigan / Wayne,2020-03-22,2020-04-02,,,Detroit
+#US / California / Los Angeles,2020-03-26,2020-04-08
+#US / Massachusetts / Middlesex,2020-03-26,2020-04-19,,,Boston
+#US / Pennsylvania / Philadelphia,2020-03-30,2020-04-12
+# US / Pennsylvania / Philadelphia,2020-04-18,2020-05-06
+#US / Florida,2020-03-21,2020-04-01
+#US / Indiana,2020-03-19,2020-04-10
+# US / Indiana,2020-04-10,2020-05-05
+Indonesia,2020-03-20,2020-04-02
+Pakistan,2020-03-26,2020-04-06,31.31,73.88,Lahore
+# Pakistan,2020-04-01,2020-05-05,31.31,73.88,Lahore
+Brazil,2020-03-24,2020-04-09,-23.53,-46.63,SaoPaulo
+# Brazil,2020-04-09,2020-05-05,-23.53,-46.63,SaoPaulo
+Nigeria,2020-04-13,2020-05-10
+Bangladesh,2020-04-07,2020-04-19
+Russia,2020-04-02,2020-04-22,55.75,37.61,Moscow
+Mexico,2020-03-27,2020-04-06,19.43,-99.13,Mexico City
+Japan,2020-03-15,2020-04-12
+Philippines,2020-03-15,2020-04-05
+Egypt,2020-03-23,2020-04-12,30.05,31.22,Cairo
+Ethiopia,2020-03-23,2020-04-12
+Vietnam,2020-03-23,2020-04-12
+Congo (Kinshasa),2020-04-04,2020-05-12
+Iran,2020-02-27,2020-03-17,35.67,51.30,Tehran
 Turkey,2020-03-22,2020-04-03,41.14,29.30,Istanbul
+Germany,2020-03-14,2020-03-28
+France,2020-03-05,2020-03-26,48.4,5.50
+United Kingdom,2020-03-16,2020-03-28,51.51,-0.13,London
+Thailand,2020-03-14,2020-03-28
+Italy / Lombardia,2020-02-24,2020-03-12,45.7,9.67,Bergamo
+#Italy / Veneto,2020-03-05,2020-03-19,45.41,11.82,Padova
+#Italy / Emilia-Romagna,2020-03-03,2020-03-16,44.67,10.59,Reggio Emilia
+#Italy / Piemonte,2020-03-09,2020-03-16
+South Africa,2020-03-06,2020-03-17
+Tanzania,2020-03-06,2020-03-17
+Myanmar,2020-03-06,2020-03-17
+"Korea, South",2020-02-24,2020-03-12
+Colombia,2020-03-06,2020-03-17
+Kenya,2020-03-06,2020-03-17
+Spain,2020-03-06,2020-03-17
+
+#Netherlands,2020-03-13,2020-03-22
+#Belgium,2020-03-17,2020-03-25,
+#Sweden,2020-03-18,2020-04-03,59.32,18.01,Stockholm
+#Norway,2020-03-23,2020-04-08
+#Portugal,2020-03-21,2020-03-28
+#Morocco,2020-03-27,2020-04-07,31.63,-8.01,Marrakesh
+#Finland,2020-03-31,2020-04-25

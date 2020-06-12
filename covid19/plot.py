@@ -146,14 +146,15 @@ def add_events(ax, events=ITALY_EVENTS, offset=0, **kwargs):
         )
 
 
-def subplots(*args, **kwargs):
+def subplots(*args, tick_right=True, **kwargs):
     f, ax = plt.subplots(*args, **kwargs)
 
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
+    if tick_right:
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
     ax.yaxis.grid(color="lightgrey", linewidth=0.5)
-
     ax.xaxis.grid(color="lightgrey", linewidth=0.5)
+    ax.xaxis.set_tick_params(labelsize=14)
 
     return f, ax
 
@@ -221,7 +222,7 @@ def plot_xarray(
     return ax
 
 
-def scatter_xarray(x, y, hue="location", time="time", ax=None, window=1, **kwargs):
+def scatter_xarray(x, y, hue="location", time="time", ax=None, window=1, xlim=None, ylim=None, **kwargs):
     if ax is None:
         _, ax = subplots()
 
@@ -236,6 +237,10 @@ def scatter_xarray(x, y, hue="location", time="time", ax=None, window=1, **kwarg
         yy = y.sel(**{hue: h}).values
         ax.plot(xx, yy, "-", color=color, alpha=0.3, linewidth=2)
         ax.plot(xx[-1:], yy[-1:], "o", color=color, label=h, **kwargs)
-        ax.annotate(h, (xx[-1:] * 1.02, yy[-1:] * 0.85), color=color)
+        xp = xx[-1:] * 1.02
+        yp = yy[-1:] * 0.85
+        if (xlim is None or xlim[0] < xp < xlim[1]) and \
+                (ylim is None or ylim[0] < yp < ylim[1]):
+            ax.annotate(h, (xp, yp), color=color)
 
     return ax

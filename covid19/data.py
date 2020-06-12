@@ -13,6 +13,7 @@ DATA_REPOS = {
         "streams": {
             "deaths": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv",
             "confirmed": "{url}/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",
+            "LUT": "{url}/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv",
         },
     },
     "italy": {
@@ -96,7 +97,7 @@ def reformat(path, kind="world"):
     return pd.DataFrame(lines.values()).set_index("date")
 
 
-def read_jhu_global(path):
+def read_jhu_global(path, lut_path=None):
     df = pd.read_csv(path, keep_default_na=False)
     ds = df.to_xarray()
     ds = ds.rename(
@@ -126,6 +127,16 @@ def read_jhu_global(path):
         }
     )
     da = da.swap_dims({"date": "time", "index": "location"})
+    if lut_path is not None:
+        lut = pd.read_csv(lut_path)
+        da = da.assign_coords(population=('location', [np.nan] * da.location.size))
+        for country, state, county, population in lut[['Country_Region', 'Province_State', 'Admin2', 'Population']].values:
+            if county is not np.nan:
+                continue
+            try:
+                da.population[da.location==country if state is np.nan else f"{country} / {state}"] = population
+            except KeyError:
+                pass
     da = da.drop(["index", "date", "state"])
     return da.to_dataset(name="deaths")
 
