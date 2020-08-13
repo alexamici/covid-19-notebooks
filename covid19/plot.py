@@ -77,7 +77,7 @@ def plot_data(
     if ratio is not None:
         data_to_plot = data_to_plot / ratio
     if drop_negative:
-        data_to_plot = data_to_plot[data_to_plot > 0]
+        data_to_plot = data_to_plot[data_to_plot >= 0]
 
     # if kind == "scatter":
     data_to_plot.sel(**{x: slice(start, stop)}).plot(ax=ax, label=label, **plot_kwargs)
@@ -237,8 +237,8 @@ def scatter_xarray(x, y, hue="location", time="time", ax=None, window=1, xlim=No
         yy = y.sel(**{hue: h}).values
         ax.plot(xx, yy, "-", color=color, alpha=0.3, linewidth=2)
         ax.plot(xx[-1:], yy[-1:], "o", color=color, label=h, **kwargs)
-        xp = xx[-1:] * 1.02
-        yp = yy[-1:] * 0.85
+        xp = xx[-1:] * 1.05
+        yp = yy[-1:]
         if (xlim is None or xlim[0] < xp < xlim[1]) and \
                 (ylim is None or ylim[0] < yp < ylim[1]):
             ax.annotate(h, (xp, yp), color=color)
