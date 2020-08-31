@@ -38,7 +38,7 @@ def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), color=None, **kwargs):
     y_fit = fit.predict(x_fit)
     if label:
         # label = f"{label} - $T_d={fit.T_d_days:.1f}$ giorni, $r^2={fit.r2:.3f}$"
-        label = f"$T_d={fit.T_d_days:.1f}$ days - {label}"
+        label = f"$T_d={fit.T_d_days:.1f}$ giorni - {label}"
     ax.plot(x_fit, y_fit, ".-", label=label, **plot_kwargs)
 
 
@@ -169,6 +169,8 @@ def plot_xarray(
     foreground_interval=(None, None),
     ylim=(0, None),
     alpha=0.8,
+    date_interval=30,
+    linewidth=2.5,
     **kwargs,
 ):
     if ax is None:
@@ -191,7 +193,7 @@ def plot_xarray(
         ax.plot(
             data[x],
             data.sel({hue: h}),
-            linewidth=2.5,
+            linewidth=linewidth,
             alpha=alpha / 4,
             color=color,
             label=label,
@@ -200,7 +202,7 @@ def plot_xarray(
             ax.plot(
                 foreground_data[x],
                 foreground_data.sel({hue: h}),
-                linewidth=2.5,
+                linewidth=linewidth,
                 alpha=alpha,
                 color=color,
                 label=h,
@@ -217,6 +219,7 @@ def plot_xarray(
         )
         ax.set(ylim=ylim)
 
+    ax.xaxis.set_major_locator(matplotlib.dates.DayLocator(interval=date_interval))
     ax.set(**kwargs)
 
     return ax
