@@ -263,6 +263,8 @@ def read_dpc(path):
             "tamponi",
             "casi_testati",
             "dimessi_guariti",
+            "casi_da_sospetto_diagnostico",
+            "casi_da_screening",
         ]
     ].to_xarray()
     ds = ds.assign_coords(

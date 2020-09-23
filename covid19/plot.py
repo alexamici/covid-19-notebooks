@@ -58,6 +58,7 @@ def plot_data(
     show_right=False,
     drop_negative=True,
     x="time",
+    linestyle='-',
     **kwargs,
 ):
     plot_kwargs = {
@@ -80,7 +81,7 @@ def plot_data(
         data_to_plot = data_to_plot[data_to_plot >= 0]
 
     # if kind == "scatter":
-    data_to_plot.sel(**{x: slice(start, stop)}).plot(ax=ax, label=label, **plot_kwargs)
+    data_to_plot.sel(**{x: slice(start, stop)}).plot(ax=ax, label=label, linestyle=linestyle, **plot_kwargs)
     # else:
     #    sns.lineplot(ax=ax, data=data_to_plot, label=label, **plot_kwargs)
     if show_left and start is not None:
