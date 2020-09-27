@@ -2,6 +2,8 @@ import itertools
 import math
 
 import matplotlib
+import matplotlib.animation as animation
+import matplotlib.patheffects as patheffects
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -14,7 +16,7 @@ PALETTE = itertools.cycle(sns.color_palette())
 LOG2 = math.log(2)
 
 
-def myLogFormat(y):
+def myLogFormat(y, pos):
     # Find the number of decimal places required
     decimalplaces = int(np.maximum(-np.log10(y), 0))  # =0 for numbers >=1
     # Insert that number into a format string
@@ -257,6 +259,35 @@ def scatter_xarray(
         if (xlim is None or xlim[0] < xp < xlim[1]) and (
             ylim is None or ylim[0] < yp < ylim[1]
         ):
-            ax.annotate(h, (xp, yp), color=color)
+            ax.annotate(h, (xp, yp), path_effects=[
+                patheffects.Stroke(linewidth=4, foreground='white'),
+                patheffects.Normal(),
+            ])
 
     return ax
+
+
+def animate_scatter(x, y, *, time="time", freq='6h', tail=28, **kwargs):
+    time_interp = pd.date_range(x[time].values[0], x[time].values[-1], freq=freq)
+    x_interp = x.interp({time: time_interp})
+    y_interp = y.interp({time: time_interp})
+
+    fig, ax = subplots()
+
+    def animate_ax(i):
+        ax.clear()
+        ax.set(**kwargs)
+
+        ax.yaxis.grid(color="lightgrey", linewidth=0.5)
+        ax.xaxis.grid(color="lightgrey", linewidth=0.5)
+        ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.))
+        # ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
+        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
+
+        ax.set_title(str(time_interp[i])[:10])
+
+        x_plot = x_interp.isel({time: slice(max(0, i - tail + 1), i + 1)})
+        y_plot = y_interp.isel({time: slice(max(0, i - tail + 1), i + 1)})
+        scatter_xarray(x_plot, y_plot, ax=ax, xlim=kwargs.get('xlim', None), ylim=kwargs.get('ylim', None))
+
+    return animation.FuncAnimation(fig, animate_ax, frames=time_interp.size, repeat=True)
