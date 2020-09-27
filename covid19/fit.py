@@ -49,7 +49,7 @@ class ExponentialFit:
         try:
             m, y, r2, _, _ = scipy.stats.linregress(x_fit, log2_y_fit)
         except ValueError:
-            m, y, r2 = np.nan, np.nan, 0.
+            m, y, r2 = np.nan, np.nan, 0.0
         t_0_norm = -y / m
         T_d_norm = 1 / m
 
@@ -59,7 +59,9 @@ class ExponentialFit:
         return cls(t_0, T_d, r2=r2, start=t_fit[0], stop=t_fit[-1])
 
     @classmethod
-    def from_xarray(cls, data, start=None, stop=None, p0=P0, min_value=9, x="time", valid_ratio=0):
+    def from_xarray(
+        cls, data, start=None, stop=None, p0=P0, min_value=9, x="time", valid_ratio=0
+    ):
         assert isinstance(data, xr.DataArray)
         t_0_guess, T_d_guess = p0
 
@@ -79,7 +81,7 @@ class ExponentialFit:
         try:
             m, y, r2, _, _ = scipy.stats.linregress(x_fit, log2_y_fit)
         except ValueError:
-            m, y, r2 = np.nan, np.nan, 0.
+            m, y, r2 = np.nan, np.nan, 0.0
             t_fit = [start, stop]
         t_0_norm = -y / m
         T_d_norm = 1 / m
@@ -88,7 +90,11 @@ class ExponentialFit:
         t_0 = t_0_guess + t_0_norm * T_d_guess
 
         if abs(T_d / DAY) * valid_ratio > abs(fit_length / DAY):
-            t_0, T_d, r2 = np.datetime64('Not a Time'), np.timedelta64('Not a Time'),  0.
+            t_0, T_d, r2 = (
+                np.datetime64("Not a Time"),
+                np.timedelta64("Not a Time"),
+                0.0,
+            )
 
         return cls(t_0, T_d, r2=r2, start=t_fit[0], stop=t_fit[-1])
 
@@ -136,14 +142,18 @@ def find_best_fits(y, data, min_r2=0.99, min_size=3, max_size=16):
     return fits
 
 
-def fit_exponential_segments(data, breaks=(None, None), break_length=DAY, valid_ratio=0, **kwargs):
+def fit_exponential_segments(
+    data, breaks=(None, None), break_length=DAY, valid_ratio=0, **kwargs
+):
     starts = [np.datetime64(b, "s") if b is not None else b for b in breaks]
     stops = [s - break_length if s is not None else s for s in starts[1:]]
     exponential_segments = []
     for start, stop in zip(starts, stops):
         try:
             if isinstance(data, xr.DataArray):
-                fit = ExponentialFit.from_xarray(data, start=start, stop=stop, valid_ratio=valid_ratio, **kwargs)
+                fit = ExponentialFit.from_xarray(
+                    data, start=start, stop=stop, valid_ratio=valid_ratio, **kwargs
+                )
             else:
                 fit = ExponentialFit.from_frame(data, start=start, stop=stop, **kwargs)
             if np.isfinite(fit.T_d):

@@ -129,12 +129,18 @@ def read_jhu_global(path, lut_path=None):
     da = da.swap_dims({"date": "time", "index": "location"})
     if lut_path is not None:
         lut = pd.read_csv(lut_path)
-        da = da.assign_coords(population=('location', [np.nan] * da.location.size))
-        for country, state, county, population in lut[['Country_Region', 'Province_State', 'Admin2', 'Population']].values:
+        da = da.assign_coords(population=("location", [np.nan] * da.location.size))
+        for country, state, county, population in lut[
+            ["Country_Region", "Province_State", "Admin2", "Population"]
+        ].values:
             if county is not np.nan:
                 continue
             try:
-                da.population[da.location==country if state is np.nan else f"{country} / {state}"] = population
+                da.population[
+                    da.location == country
+                    if state is np.nan
+                    else f"{country} / {state}"
+                ] = population
             except KeyError:
                 pass
     da = da.drop(["index", "date", "state"])
@@ -262,9 +268,6 @@ def read_dpc(path):
             "totale_casi",
             "tamponi",
             "casi_testati",
-            "dimessi_guariti",
-            "casi_da_sospetto_diagnostico",
-            "casi_da_screening",
         ]
     ].to_xarray()
     ds = ds.assign_coords(

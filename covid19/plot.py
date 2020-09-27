@@ -14,6 +14,15 @@ PALETTE = itertools.cycle(sns.color_palette())
 LOG2 = math.log(2)
 
 
+def myLogFormat(y):
+    # Find the number of decimal places required
+    decimalplaces = int(np.maximum(-np.log10(y), 0))  # =0 for numbers >=1
+    # Insert that number into a format string
+    formatstring = "{{:.{:1d}f}}".format(decimalplaces)
+    # Return the formatted tick label
+    return formatstring.format(y)
+
+
 def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), color=None, **kwargs):
     extrapolate_start, extrapolate_stop = extrapolate
 
@@ -58,7 +67,7 @@ def plot_data(
     show_right=False,
     drop_negative=True,
     x="time",
-    linestyle='-',
+    linestyle="-",
     **kwargs,
 ):
     plot_kwargs = {
@@ -81,7 +90,9 @@ def plot_data(
         data_to_plot = data_to_plot[data_to_plot >= 0]
 
     # if kind == "scatter":
-    data_to_plot.sel(**{x: slice(start, stop)}).plot(ax=ax, label=label, linestyle=linestyle, **plot_kwargs)
+    data_to_plot.sel(**{x: slice(start, stop)}).plot(
+        ax=ax, label=label, linestyle=linestyle, **plot_kwargs
+    )
     # else:
     #    sns.lineplot(ax=ax, data=data_to_plot, label=label, **plot_kwargs)
     if show_left and start is not None:
@@ -187,9 +198,7 @@ def plot_xarray(
 
     foreground_data = data.sel({x: slice(*foreground_interval)})
 
-    for h, color in zip(
-        data[hue].values, itertools.cycle(sns.color_palette())
-    ):
+    for h, color in zip(data[hue].values, itertools.cycle(sns.color_palette())):
         label = None if foreground_hue is None or h in foreground_hue else h
         ax.plot(
             data[x],
@@ -226,7 +235,9 @@ def plot_xarray(
     return ax
 
 
-def scatter_xarray(x, y, hue="location", time="time", ax=None, window=1, xlim=None, ylim=None, **kwargs):
+def scatter_xarray(
+    x, y, hue="location", time="time", ax=None, window=1, xlim=None, ylim=None, **kwargs
+):
     if ax is None:
         _, ax = subplots()
 
@@ -243,8 +254,9 @@ def scatter_xarray(x, y, hue="location", time="time", ax=None, window=1, xlim=No
         ax.plot(xx[-1:], yy[-1:], "o", color=color, label=h, **kwargs)
         xp = xx[-1:] * 1.05
         yp = yy[-1:]
-        if (xlim is None or xlim[0] < xp < xlim[1]) and \
-                (ylim is None or ylim[0] < yp < ylim[1]):
+        if (xlim is None or xlim[0] < xp < xlim[1]) and (
+            ylim is None or ylim[0] < yp < ylim[1]
+        ):
             ax.annotate(h, (xp, yp), color=color)
 
     return ax
