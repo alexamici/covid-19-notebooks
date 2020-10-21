@@ -342,3 +342,17 @@ def interp_on_observations(gridded, observed, index="location"):
 
 def read_outbreaks_metadata(path):
     return pd.read_csv(path).to_dict(orient="records")
+
+
+def shift_and_scale(data, delay, ratio, drop_negative=False, x='time'):
+    if delay is not None:
+        if isinstance(delay, (int, float)):
+            delay = delay * np.timedelta64(24 * 3600, "s")
+        data = data.assign_coords(
+            {x: (x, data.coords[x] + delay)}
+        )
+    if ratio is not None:
+        data = data / ratio
+    if drop_negative:
+        data = data[data >= 0]
+    return data

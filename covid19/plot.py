@@ -25,8 +25,13 @@ def myLogFormat(y, pos):
     return formatstring.format(y)
 
 
-def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), color=None, **kwargs):
+def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), delay=None, ratio=None, color=None, **kwargs):
     extrapolate_start, extrapolate_stop = extrapolate
+
+    if delay is not None:
+        fit = fit.shift(delay)
+    if ratio is not None:
+        fit = fit.scale(1 / ratio)
 
     if isinstance(extrapolate_start, int):
         extrapolate_start = fit.start + extrapolate_start * DAY
@@ -62,7 +67,7 @@ def plot_data(
     color=None,
     date_interval=7,
     marker="o",
-    markersize=3,
+    markersize=2,
     delay=None,
     ratio=None,
     show_left=False,
@@ -70,6 +75,7 @@ def plot_data(
     drop_negative=True,
     x="time",
     linestyle="-",
+    annotate=False,
     **kwargs,
 ):
     plot_kwargs = {
@@ -92,9 +98,17 @@ def plot_data(
         data_to_plot = data_to_plot[data_to_plot >= 0]
 
     # if kind == "scatter":
-    data_to_plot.sel(**{x: slice(start, stop)}).plot(
-        ax=ax, label=label, linestyle=linestyle, **plot_kwargs
-    )
+    data_to_plot_interval = data_to_plot.sel(**{x: slice(start, stop)})
+    data_to_plot_interval.plot(ax=ax, label=label, linestyle=linestyle, **plot_kwargs)
+    if annotate:
+        x = data_to_plot_interval[-1][x].values + np.timedelta64(4, 'D')
+        value = data_to_plot_interval[-1].values
+        label = f'{value:#.2g}' if value <= 10 else f'{value:.0f}'
+        y = value * .95
+        ax.annotate(label, (x, y), color=color, path_effects=[
+                patheffects.Stroke(linewidth=4, foreground='white'),
+                patheffects.Normal(),
+        ])
     # else:
     #    sns.lineplot(ax=ax, data=data_to_plot, label=label, **plot_kwargs)
     if show_left and start is not None:
@@ -113,6 +127,7 @@ def plot_data(
             edgecolor=color,
             **plot_kwargs,
         )
+
 
     ax.yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
@@ -282,7 +297,7 @@ def animate_scatter(x, y, *, time="time", freq='6h', tail=28, **kwargs):
         ax.xaxis.grid(color="lightgrey", linewidth=0.5)
         ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.))
         # ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
-        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
+        # ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
 
         ax.set_title(str(time_interp[i])[:10])
 
