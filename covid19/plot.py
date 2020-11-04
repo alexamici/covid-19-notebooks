@@ -295,9 +295,9 @@ def animate_scatter(x, y, *, time="time", freq='6h', tail=28, **kwargs):
 
         ax.yaxis.grid(color="lightgrey", linewidth=0.5)
         ax.xaxis.grid(color="lightgrey", linewidth=0.5)
-        ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.))
-        # ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
-        # ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
+        # ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.))
+        ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
+        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
 
         ax.set_title(str(time_interp[i])[:10])
 
