@@ -76,6 +76,7 @@ def plot_data(
     x="time",
     linestyle="-",
     annotate=False,
+    annotate_add_label=False,
     **kwargs,
 ):
     plot_kwargs = {
@@ -101,11 +102,14 @@ def plot_data(
     data_to_plot_interval = data_to_plot.sel(**{x: slice(start, stop)})
     data_to_plot_interval.plot(ax=ax, label=label, linestyle=linestyle, **plot_kwargs)
     if annotate:
-        x = data_to_plot_interval[-1][x].values + np.timedelta64(4, 'D')
+        x = data_to_plot_interval[-1][x].values + 2 * DAY
         value = data_to_plot_interval[-1].values
-        label = f'{value:#.2g}' if value <= 10 else f'{value:.0f}'
+        alabel_value = value if ratio is None else value * ratio
+        alabel = f'{alabel_value:#.2g}' if alabel_value <= 10 else f'{alabel_value:.0f}'
+        if annotate_add_label:
+            alabel += f' - {label}'
         y = value * .95
-        ax.annotate(label, (x, y), color=color, path_effects=[
+        ax.annotate(alabel, (x, y), color=color, path_effects=[
                 patheffects.Stroke(linewidth=4, foreground='white'),
                 patheffects.Normal(),
         ])
@@ -295,8 +299,8 @@ def animate_scatter(x, y, *, time="time", freq='6h', tail=28, **kwargs):
 
         ax.yaxis.grid(color="lightgrey", linewidth=0.5)
         ax.xaxis.grid(color="lightgrey", linewidth=0.5)
-        # ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.))
-        ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
+        ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.))
+        # ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
         ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
 
         ax.set_title(str(time_interp[i])[:10])
