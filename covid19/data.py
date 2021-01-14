@@ -110,9 +110,10 @@ def read_jhu_global(path, lut_path=None):
     )
     ds = ds.set_coords(["country", "state", "lat", "lon"])
     da = ds.to_array("date")
-    time = [
-        "2020-%02d-%02d" % tuple(map(int, d.split("/")[:2])) for d in da.date.values
-    ]
+    time = []
+    for d in da.date.values:
+        m, d, y = map(int, d.split("/"))
+        time.append("20%02d-%02d-%02d" % (y, m, d))
     location = [
         " / ".join(i for i in items if i)
         for items in zip(da.country.values, da.state.values)
@@ -167,9 +168,10 @@ def read_jhu_usa(deaths_path):
         ds = ds.rename({"Population": "population"})
         ds = ds.set_coords(["population"])
     da = ds.to_array("date")
-    time = [
-        "2020-%02d-%02d" % tuple(map(int, d.split("/")[:2])) for d in da.date.values
-    ]
+    time = []
+    for d in da.date.values:
+        m, d, y = map(int, d.split("/"))
+        time.append("20%02d-%02d-%02d" % (y, m, d))
     da = da.assign_coords(
         {
             "country": ("index", da.country.astype(str)),
