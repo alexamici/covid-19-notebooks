@@ -25,7 +25,16 @@ def myLogFormat(y, pos):
     return formatstring.format(y)
 
 
-def plot_fit(ax, fit, label=None, extrapolate=(-2, +2), delay=None, ratio=None, color=None, **kwargs):
+def plot_fit(
+    ax,
+    fit,
+    label=None,
+    extrapolate=(-2, +2),
+    delay=None,
+    ratio=None,
+    color=None,
+    **kwargs,
+):
     extrapolate_start, extrapolate_stop = extrapolate
 
     if delay is not None:
@@ -105,14 +114,19 @@ def plot_data(
         x = data_to_plot_interval[-1][x].values + 2 * DAY
         value = data_to_plot_interval[-1].values
         alabel_value = value if ratio is None else value * ratio
-        alabel = f'{alabel_value:#.2g}' if alabel_value <= 10 else f'{alabel_value:.0f}'
+        alabel = f"{alabel_value:#.2g}" if alabel_value <= 10 else f"{alabel_value:.0f}"
         if annotate_add_label:
-            alabel += f' - {label}'
-        y = value * .95
-        ax.annotate(alabel, (x, y), color=color, path_effects=[
-                patheffects.Stroke(linewidth=4, foreground='white'),
+            alabel += f" - {label}"
+        y = value * 0.95
+        ax.annotate(
+            alabel,
+            (x, y),
+            color=color,
+            path_effects=[
+                patheffects.Stroke(linewidth=4, foreground="white"),
                 patheffects.Normal(),
-        ])
+            ],
+        )
     # else:
     #    sns.lineplot(ax=ax, data=data_to_plot, label=label, **plot_kwargs)
     if show_left and start is not None:
@@ -131,7 +145,6 @@ def plot_data(
             edgecolor=color,
             **plot_kwargs,
         )
-
 
     ax.yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
@@ -256,6 +269,54 @@ def plot_xarray(
     return ax
 
 
+def stack_xarray(
+    data,
+    x="time",
+    ax=None,
+    hue="age_class",
+    window=1,
+    alpha=0.4,
+    date_interval=21,
+    linewidth=2.5,
+    width=0.6,
+    **kwargs,
+):
+    if ax is None:
+        _, ax = subplots()
+
+    data_sum = data.cumsum(hue)
+
+    if window != 1:
+        data_total = data_sum.rolling({x: window}).mean()
+    else:
+        data_total = data_sum
+
+    bottom = 0.0
+    for label, color in zip(data[hue].values, itertools.cycle(sns.color_palette())):
+        ax.bar(
+            data[x].values,
+            data.sel({hue: label}).values,
+            bottom=bottom,
+            alpha=alpha,
+            color=color,
+            label=label,
+            width=width,
+        )
+        bottom = data_sum.sel({hue: label}).values
+
+    ax.plot(
+        data_total[x],
+        data_total.sel({hue: data[hue].values[-1]}),
+        label="Totale",
+        linewidth=linewidth,
+    )
+
+    ax.xaxis.set_major_locator(matplotlib.dates.DayLocator(interval=date_interval))
+    ax.set(**kwargs)
+
+    return ax
+
+
 def scatter_xarray(
     x, y, hue="location", time="time", ax=None, window=1, xlim=None, ylim=None, **kwargs
 ):
@@ -273,20 +334,24 @@ def scatter_xarray(
         yy = y.sel(**{hue: h}).values
         ax.plot(xx, yy, "-", color=color, alpha=0.3, linewidth=2)
         ax.plot(xx[-1:], yy[-1:], "o", color=color, label=h, **kwargs)
-        xp = xx[-1:] * 1.05
+        xp = xx[-1:]
         yp = yy[-1:]
         if (xlim is None or xlim[0] < xp < xlim[1]) and (
             ylim is None or ylim[0] < yp < ylim[1]
         ):
-            ax.annotate(h, (xp, yp), path_effects=[
-                patheffects.Stroke(linewidth=4, foreground='white'),
-                patheffects.Normal(),
-            ])
-
+            ax.annotate(
+                h,
+                (xp, yp),
+                path_effects=[
+                    patheffects.Stroke(linewidth=4, foreground="white"),
+                    patheffects.Normal(),
+                ],
+            )
+    ax.set(xlim=xlim, ylim=ylim)
     return ax
 
 
-def animate_scatter(x, y, *, time="time", freq='6h', tail=28, **kwargs):
+def animate_scatter(x, y, *, time="time", freq="6h", tail=28, **kwargs):
     time_interp = pd.date_range(x[time].values[0], x[time].values[-1], freq=freq)
     x_interp = x.interp({time: time_interp})
     y_interp = y.interp({time: time_interp})
@@ -299,7 +364,7 @@ def animate_scatter(x, y, *, time="time", freq='6h', tail=28, **kwargs):
 
         ax.yaxis.grid(color="lightgrey", linewidth=0.5)
         ax.xaxis.grid(color="lightgrey", linewidth=0.5)
-        ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.))
+        ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
         # ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
         ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(myLogFormat))
 
@@ -307,6 +372,14 @@ def animate_scatter(x, y, *, time="time", freq='6h', tail=28, **kwargs):
 
         x_plot = x_interp.isel({time: slice(max(0, i - tail + 1), i + 1)})
         y_plot = y_interp.isel({time: slice(max(0, i - tail + 1), i + 1)})
-        scatter_xarray(x_plot, y_plot, ax=ax, xlim=kwargs.get('xlim', None), ylim=kwargs.get('ylim', None))
+        scatter_xarray(
+            x_plot,
+            y_plot,
+            ax=ax,
+            xlim=kwargs.get("xlim", None),
+            ylim=kwargs.get("ylim", None),
+        )
 
-    return animation.FuncAnimation(fig, animate_ax, frames=time_interp.size, repeat=True)
+    return animation.FuncAnimation(
+        fig, animate_ax, frames=time_interp.size, repeat=True
+    )

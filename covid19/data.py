@@ -37,6 +37,77 @@ DATA_REPOS = {
 CDM_DIMS = {"location", "time", "age_class", "dayofyear", "month", "year"}
 CDM_COORDS = CDM_DIMS | {"country", "state_region", "lat", "lon"}
 
+POPULATION_BY_REGION = {
+    "Lombardia": 10018806,
+    "Lazio": 5898124,
+    "Campania": 5839084,
+    "Sicilia": 5056641,
+    "Veneto": 4907529,
+    "Emilia-Romagna": 4448841,
+    "Piemonte": 4392526,
+    "Puglia": 4063888,
+    "Toscana": 3742437,
+    "Calabria": 1965128,
+    "Sardegna": 1653135,
+    "Liguria": 1565307,
+    "Marche": 1538055,
+    "Abruzzo": 1322247,
+    "Friuli Venezia Giulia": 1217872,
+    "Umbria": 888908,
+    "Basilicata": 570365,
+    "Molise": 310449,
+    "Valle d'Aosta": 126883,
+    "P.A. Bolzano": 524256,
+    "P.A. Trento": 538604,
+}
+POPULATION_70_BY_REGION = {
+    "Lombardia": 1733849,
+    "Lazio": 952612,
+    "Campania": 788697,
+    "Sicilia": 772880,
+    "Veneto": 852983,
+    "Emilia-Romagna": 826482,
+    "Piemonte": 848816,
+    "Puglia": 658660,
+    "Toscana": 730740,
+    "Calabria": 305986,
+    "Sardegna": 287140,
+    "Liguria": 342003,
+    "Marche": 289306,
+    "Abruzzo": 234575,
+    "Friuli-Venezia Giulia": 244902,
+    "Umbria": 172921,
+    "Basilicata": 95735,
+    "Molise": 56548,
+    "Valle d'Aosta / Vallée d'Aoste": 22653,
+    "Provincia Autonoma Bolzano / Bozen": 79886,
+    "Provincia Autonoma Trento": 90702,
+    "Italia": 10388076,
+}
+POPULATION_80_BY_REGION ={
+    "Lombardia": 737640,
+    "Lazio": 400605,
+    "Campania": 304317,
+    "Sicilia": 315915,
+    "Veneto": 358540,
+    "Emilia-Romagna": 369353,
+    "Piemonte": 371400,
+    "Puglia": 268126,
+    "Toscana": 320589,
+    "Calabria": 130778,
+    "Sardegna": 116283,
+    "Liguria": 155969,
+    "Marche": 133365,
+    "Abruzzo": 104003,
+    "Friuli-Venezia Giulia": 103493,
+    "Umbria": 77917,
+    "Basilicata": 43930,
+    "Molise": 26257,
+    "Valle d'Aosta / Vallée d'Aoste": 9564,
+    "Provincia Autonoma Bolzano / Bozen": 33273,
+    "Provincia Autonoma Trento": 38386,
+    "Italia": 4419703,
+}
 
 def cdm_check(da):
     dim_names = set(da.dims)
@@ -290,38 +361,45 @@ def read_dpc(path):
             "casi_testati": "tested",
         }
     )
-    population = {
-        "Lombardia": 10018806,
-        "Lazio": 5898124,
-        "Campania": 5839084,
-        "Sicilia": 5056641,
-        "Veneto": 4907529,
-        "Emilia-Romagna": 4448841,
-        "Piemonte": 4392526,
-        "Puglia": 4063888,
-        "Toscana": 3742437,
-        "Calabria": 1965128,
-        "Sardegna": 1653135,
-        "Liguria": 1565307,
-        "Marche": 1538055,
-        "Abruzzo": 1322247,
-        "Friuli Venezia Giulia": 1217872,
-        "Umbria": 888908,
-        "Basilicata": 570365,
-        "Molise": 310449,
-        "Valle d'Aosta": 126883,
-        "P.A. Bolzano": 524256,
-        "P.A. Trento": 538604,
-    }
     ds = ds.assign(
         {
             "population": (
                 "location",
-                [population[l.partition(" / ")[2]] for l in ds.location.values],
+                [POPULATION_BY_REGION[l.partition(" / ")[2]] for l in ds.location.values],
             )
         }
     )
     return ds.fillna(0)
+
+
+def read_vaccini(path):
+    df = pd.read_csv(path, parse_dates=["data_somministrazione"], index_col=["data_somministrazione"])
+    df.index = df.index.normalize().rename("time")
+    df = df.set_index(["nome_area", "fornitore", "fascia_anagrafica"], append=True)
+    ds = df[
+        [
+            "prima_dose", "seconda_dose",
+        ]
+    ].to_xarray().fillna(0)
+    ds = ds.rename({"nome_area": "location", "fornitore": "provider", "fascia_anagrafica": "age_class", "prima_dose": "dose1", "seconda_dose": "dose2"})
+    ds = xr.merge([ds, ds.sum('location').expand_dims(location=["Italia"])])
+    ds = ds.assign_coords(
+        {
+            "population_70": (
+                "location",
+                [POPULATION_70_BY_REGION[l] for l in ds.location.values],
+            )
+        }
+    )
+    ds = ds.assign_coords(
+        {
+            "population_80": (
+                "location",
+                [POPULATION_80_BY_REGION[l] for l in ds.location.values],
+            )
+        }
+    )
+    return ds
 
 
 def interp_on_observations(gridded, observed, index="location"):
