@@ -53,12 +53,17 @@ POPULATION_BY_REGION = {
     "Marche": 1538055,
     "Abruzzo": 1322247,
     "Friuli Venezia Giulia": 1217872,
+    "Friuli-Venezia Giulia": 1217872,
     "Umbria": 888908,
     "Basilicata": 570365,
     "Molise": 310449,
     "Valle d'Aosta": 126883,
+    "Valle d'Aosta / Vallée d'Aoste": 126883,
     "P.A. Bolzano": 524256,
+    "Provincia Autonoma Bolzano / Bozen": 524256,
     "P.A. Trento": 538604,
+    "Provincia Autonoma Trento": 538604,
+    "Italia": 60000000,
 }
 POPULATION_70_BY_REGION = {
     "Lombardia": 1733849,
@@ -385,14 +390,14 @@ def read_vaccini(path):
     ds = xr.merge([ds, ds.sum('location').expand_dims(location=["Italia"])])
     ds = ds.assign_coords(
         {
+            "population": (
+                "location",
+                [POPULATION_BY_REGION[l] for l in ds.location.values],
+            ),
             "population_70": (
                 "location",
                 [POPULATION_70_BY_REGION[l] for l in ds.location.values],
-            )
-        }
-    )
-    ds = ds.assign_coords(
-        {
+            ),
             "population_80": (
                 "location",
                 [POPULATION_80_BY_REGION[l] for l in ds.location.values],

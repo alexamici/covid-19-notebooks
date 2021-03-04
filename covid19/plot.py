@@ -277,7 +277,7 @@ def stack_xarray(
     window=1,
     alpha=0.4,
     date_interval=21,
-    linewidth=2.5,
+    linewidth=2,
     width=0.6,
     **kwargs,
 ):
@@ -332,21 +332,26 @@ def scatter_xarray(
     for h, color in zip(x[hue].values, itertools.cycle(sns.color_palette())):
         xx = x.sel(**{hue: h}).values
         yy = y.sel(**{hue: h}).values
-        ax.plot(xx, yy, "-", color=color, alpha=0.3, linewidth=2)
-        ax.plot(xx[-1:], yy[-1:], "o", color=color, label=h, **kwargs)
         xp = xx[-1:]
         yp = yy[-1:]
-        if (xlim is None or xlim[0] < xp < xlim[1]) and (
-            ylim is None or ylim[0] < yp < ylim[1]
-        ):
-            ax.annotate(
-                h,
-                (xp, yp),
-                path_effects=[
-                    patheffects.Stroke(linewidth=4, foreground="white"),
-                    patheffects.Normal(),
-                ],
-            )
+        if xlim is not None:
+            xp = max(xp, xlim[0])
+            xp = min(xp, xlim[1])
+        if ylim is not None:
+            yp = max(yp, ylim[0])
+            yp = min(yp, ylim[1])
+
+        ax.plot(xx, yy, "-", color=color, alpha=0.3, linewidth=2)
+        ax.plot(xp, yp, "o", color=color, label=h, **kwargs)
+
+        ax.annotate(
+            h,
+            (xp, yp),
+            path_effects=[
+                patheffects.Stroke(linewidth=4, foreground="white"),
+                patheffects.Normal(),
+            ],
+        )
     ax.set(xlim=xlim, ylim=ylim)
     return ax
 
