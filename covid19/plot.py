@@ -192,8 +192,11 @@ def add_events(ax, events=ITALY_EVENTS, offset=0, **kwargs):
         )
 
 
-def subplots(*args, tick_right=True, **kwargs):
+def subplots(*args, tick_right=True, note=None, note_pos=(1, 0.06), **kwargs):
     f, ax = plt.subplots(*args, **kwargs)
+
+    if note:
+        f.text(*note_pos, note, horizontalalignment="right", alpha=0.5)
 
     if tick_right:
         ax.yaxis.tick_right()
@@ -279,6 +282,7 @@ def stack_xarray(
     date_interval=21,
     linewidth=2,
     width=0.6,
+    label_total=None,
     **kwargs,
 ):
     if ax is None:
@@ -304,12 +308,13 @@ def stack_xarray(
         )
         bottom = data_sum.sel({hue: label}).values
 
-    ax.plot(
-        data_total[x],
-        data_total.sel({hue: data[hue].values[-1]}),
-        label="Totale",
-        linewidth=linewidth,
-    )
+    if label_total is not None:
+        ax.plot(
+            data_total[x],
+            data_total.sel({hue: data[hue].values[-1]}),
+            label=label_total,
+            linewidth=linewidth,
+        )
 
     ax.xaxis.set_major_locator(matplotlib.dates.DayLocator(interval=date_interval))
     ax.set(**kwargs)
@@ -346,7 +351,7 @@ def scatter_xarray(
 
         ax.annotate(
             h,
-            (xp, yp),
+            (xp, yp + 0.007),
             path_effects=[
                 patheffects.Stroke(linewidth=4, foreground="white"),
                 patheffects.Normal(),

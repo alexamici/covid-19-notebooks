@@ -53,17 +53,13 @@ POPULATION_BY_REGION = {
     "Marche": 1538055,
     "Abruzzo": 1322247,
     "Friuli Venezia Giulia": 1217872,
-    "Friuli-Venezia Giulia": 1217872,
     "Umbria": 888908,
     "Basilicata": 570365,
     "Molise": 310449,
     "Valle d'Aosta": 126883,
-    "Valle d'Aosta / Vallée d'Aoste": 126883,
     "P.A. Bolzano": 524256,
-    "Provincia Autonoma Bolzano / Bozen": 524256,
     "P.A. Trento": 538604,
-    "Provincia Autonoma Trento": 538604,
-    "Italia": 60000000,
+    "Italia": 60360000,
 }
 POPULATION_70_BY_REGION = {
     "Lombardia": 1733849,
@@ -80,16 +76,16 @@ POPULATION_70_BY_REGION = {
     "Liguria": 342003,
     "Marche": 289306,
     "Abruzzo": 234575,
-    "Friuli-Venezia Giulia": 244902,
+    "Friuli Venezia Giulia": 244902,
     "Umbria": 172921,
     "Basilicata": 95735,
     "Molise": 56548,
-    "Valle d'Aosta / Vallée d'Aoste": 22653,
-    "Provincia Autonoma Bolzano / Bozen": 79886,
-    "Provincia Autonoma Trento": 90702,
+    "Valle d'Aosta": 22653,
+    "P.A. Bolzano": 79886,
+    "P.A. Trento": 90702,
     "Italia": 10388076,
 }
-POPULATION_80_BY_REGION ={
+POPULATION_80_BY_REGION = {
     "Lombardia": 737640,
     "Lazio": 400605,
     "Campania": 304317,
@@ -104,13 +100,13 @@ POPULATION_80_BY_REGION ={
     "Liguria": 155969,
     "Marche": 133365,
     "Abruzzo": 104003,
-    "Friuli-Venezia Giulia": 103493,
+    "Friuli Venezia Giulia": 103493,
     "Umbria": 77917,
     "Basilicata": 43930,
     "Molise": 26257,
-    "Valle d'Aosta / Vallée d'Aoste": 9564,
-    "Provincia Autonoma Bolzano / Bozen": 33273,
-    "Provincia Autonoma Trento": 38386,
+    "Valle d'Aosta": 9564,
+    "P.A. Bolzano": 33273,
+    "P.A. Trento": 38386,
     "Italia": 4419703,
 }
 
@@ -377,8 +373,18 @@ def read_dpc(path):
     return ds.fillna(0)
 
 
+FIX_LABELS = {
+    "Friuli-Venezia Giulia": "Friuli Venezia Giulia",
+    "Provincia Autonoma Bolzano / Bozen": "P.A. Bolzano",
+    "Provincia Autonoma Trento": "P.A. Trento",
+    "Valle d'Aosta / Vallée d'Aoste": "Valle d'Aosta",
+}
+
+
 def read_vaccini(path):
     df = pd.read_csv(path, parse_dates=["data_somministrazione"], index_col=["data_somministrazione"])
+    for label, new_label in FIX_LABELS.items():
+        df.loc[df.nome_area==label, "nome_area"] = new_label
     df.index = df.index.normalize().rename("time")
     df = df.set_index(["nome_area", "fornitore", "fascia_anagrafica"], append=True)
     ds = df[
