@@ -278,7 +278,7 @@ def stack_xarray(
     ax=None,
     hue="age_class",
     window=1,
-    alpha=0.4,
+    alpha=0.8,
     date_interval=21,
     linewidth=2,
     width=0.6,
@@ -295,13 +295,15 @@ def stack_xarray(
     else:
         data_total = data_sum
 
+    alpha_bars = alpha if label_total is None else alpha / 2
+
     bottom = 0.0
     for label, color in zip(data[hue].values, itertools.cycle(sns.color_palette())):
         ax.bar(
             data[x].values,
             data.sel({hue: label}).values,
             bottom=bottom,
-            alpha=alpha,
+            alpha=alpha_bars,
             color=color,
             label=label,
             width=width,
@@ -314,6 +316,7 @@ def stack_xarray(
             data_total.sel({hue: data[hue].values[-1]}),
             label=label_total,
             linewidth=linewidth,
+            alpha=alpha,
         )
 
     ax.xaxis.set_major_locator(matplotlib.dates.DayLocator(interval=date_interval))
@@ -334,7 +337,10 @@ def scatter_xarray(
 
     x, y = xr.align(x, y)
 
-    for h, color in zip(x[hue].values, itertools.cycle(sns.color_palette())):
+    x = x.sortby(x.isel(time=-1))
+    y = y.sortby(x.isel(time=-1))
+
+    for h, color in zip(x[hue].values[::-1], itertools.cycle(sns.color_palette())):
         xx = x.sel(**{hue: h}).values
         yy = y.sel(**{hue: h}).values
         xp = xx[-1:]
