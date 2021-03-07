@@ -110,6 +110,7 @@ POPULATION_80_BY_REGION = {
     "Italia": 4419703,
 }
 
+
 def cdm_check(da):
     dim_names = set(da.dims)
     if dim_names.difference(CDM_DIMS):
@@ -132,8 +133,16 @@ def download(url, path=".", repo="italy"):
 
 
 REFORMAT = {
-    "world": {"date_start": 4, "country": "Country/Region", "state": "Province/State",},
-    "usa": {"date_start": 16, "country": "Country_Region", "state": "Province_State",},
+    "world": {
+        "date_start": 4,
+        "country": "Country/Region",
+        "state": "Province/State",
+    },
+    "usa": {
+        "date_start": 16,
+        "country": "Country_Region",
+        "state": "Province_State",
+    },
 }
 
 
@@ -366,7 +375,10 @@ def read_dpc(path):
         {
             "population": (
                 "location",
-                [POPULATION_BY_REGION[l.partition(" / ")[2]] for l in ds.location.values],
+                [
+                    POPULATION_BY_REGION[l.partition(" / ")[2]]
+                    for l in ds.location.values
+                ],
             )
         }
     )
@@ -382,18 +394,24 @@ FIX_LABELS = {
 
 
 def read_vaccini(path):
-    df = pd.read_csv(path, parse_dates=["data_somministrazione"], index_col=["data_somministrazione"])
+    df = pd.read_csv(
+        path, parse_dates=["data_somministrazione"], index_col=["data_somministrazione"]
+    )
     for label, new_label in FIX_LABELS.items():
-        df.loc[df.nome_area==label, "nome_area"] = new_label
+        df.loc[df.nome_area == label, "nome_area"] = new_label
     df.index = df.index.normalize().rename("time")
     df = df.set_index(["nome_area", "fornitore", "fascia_anagrafica"], append=True)
-    ds = df[
-        [
-            "prima_dose", "seconda_dose",
-        ]
-    ].to_xarray().fillna(0)
-    ds = ds.rename({"nome_area": "location", "fornitore": "provider", "fascia_anagrafica": "age_class", "prima_dose": "dose1", "seconda_dose": "dose2"})
-    ds = xr.merge([ds, ds.sum('location').expand_dims(location=["Italia"])])
+    df = df.rename(columns={"prima_dose": "primer", "seconda_dose": "booster"})
+    ds = df[["primer", "booster"]].to_xarray().fillna(0)
+    ds = ds.to_array("dose_type", name="doses").to_dataset()
+    ds = ds.rename(
+        {
+            "nome_area": "location",
+            "fornitore": "provider",
+            "fascia_anagrafica": "age_class",
+        }
+    )
+    ds = xr.merge([ds, ds.sum("location").expand_dims(location=["Italia"])])
     ds = ds.assign_coords(
         {
             "population": (
@@ -407,7 +425,7 @@ def read_vaccini(path):
             "population_80": (
                 "location",
                 [POPULATION_80_BY_REGION[l] for l in ds.location.values],
-            )
+            ),
         }
     )
     return ds
@@ -433,13 +451,11 @@ def read_outbreaks_metadata(path):
     return pd.read_csv(path).to_dict(orient="records")
 
 
-def shift_and_scale(data, delay, ratio, drop_negative=False, x='time'):
+def shift_and_scale(data, delay, ratio, drop_negative=False, x="time"):
     if delay is not None:
         if isinstance(delay, (int, float)):
             delay = delay * np.timedelta64(24 * 3600, "s")
-        data = data.assign_coords(
-            {x: (x, data.coords[x] + delay)}
-        )
+        data = data.assign_coords({x: (x, data.coords[x] + delay)})
     if ratio is not None:
         data = data / ratio
     if drop_negative:
