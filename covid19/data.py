@@ -192,7 +192,7 @@ def read_jhu_global(path, lut_path=None):
     ds = ds.set_coords(["country", "state", "lat", "lon"])
     da = ds.to_array("date")
     time = [
-        "2020-%02d-%02d" % tuple(map(int, d.split("/")[:2])) for d in da.date.values
+        "20{2:02d}-{0:02d}-{1:02d}".format(*map(int, d.split("/"))) for d in da.date.values
     ]
     location = [
         " / ".join(i for i in items if i)
@@ -349,6 +349,7 @@ def read_dpc(path):
             "totale_casi",
             "tamponi",
             "casi_testati",
+            "ingressi_terapia_intensiva",
         ]
     ].to_xarray()
     ds = ds.assign_coords(
@@ -369,6 +370,7 @@ def read_dpc(path):
             "totale_casi": "confirmed",
             "tamponi": "tests",
             "casi_testati": "tested",
+            "ingressi_terapia_intensiva": "daily_critical",
         }
     )
     ds = ds.assign(
