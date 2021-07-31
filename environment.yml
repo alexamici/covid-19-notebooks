@@ -3,15 +3,11 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.7.*
+  - python=3.9
   - attrs
   - black
   - bottleneck
-  - cdsapi
-  - cfgrib
-  - netcdf4
   - notebook
-  - pandas
   - requests
   - scipy
   - seaborn
