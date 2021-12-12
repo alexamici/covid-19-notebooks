@@ -64,7 +64,7 @@ def plot_fit(
     if label:
         # label = f"{label} - $T_d={fit.T_d_days:.1f}$ giorni, $r^2={fit.r2:.3f}$"
         label = f"$T_d={fit.T_d_days:.1f}$ giorni - {label}"
-    ax.plot(x_fit, y_fit, ".-", label=label, **plot_kwargs)
+    ax.plot(x_fit, y_fit, "--", label=label, **plot_kwargs)
 
 
 def plot_data(
@@ -86,12 +86,14 @@ def plot_data(
     linestyle="-",
     annotate=False,
     annotate_add_label=False,
+    ylim=(None, None),
     **kwargs,
 ):
     plot_kwargs = {
         "color": color or next(PALETTE),
         "markersize": markersize,
         "marker": marker,
+        "ylim": ylim,
     }
     plot_kwargs.update(kwargs)
 
@@ -100,7 +102,7 @@ def plot_data(
         if isinstance(delay, (int, float)):
             delay = delay * np.timedelta64(24 * 3600, "s")
         data_to_plot = data_to_plot.assign_coords(
-            {x: (x, data_to_plot.coords[x] + delay)}
+            {x: (x, data_to_plot.coords[x].data + delay)}
         )
     if ratio is not None:
         data_to_plot = data_to_plot / ratio
@@ -118,15 +120,16 @@ def plot_data(
         if annotate_add_label:
             alabel += f" - {label}"
         y = value * 0.95
-        ax.annotate(
-            alabel,
-            (x, y),
-            color=color,
-            path_effects=[
-                patheffects.Stroke(linewidth=4, foreground="white"),
-                patheffects.Normal(),
-            ],
-        )
+        if ylim[0] is None or y > ylim[0]:
+            ax.annotate(
+                alabel,
+                (x, y),
+                color=color,
+                path_effects=[
+                    patheffects.Stroke(linewidth=4, foreground="white"),
+                    patheffects.Normal(),
+                ],
+            )
     # else:
     #    sns.lineplot(ax=ax, data=data_to_plot, label=label, **plot_kwargs)
     if show_left and start is not None:
@@ -264,7 +267,7 @@ def plot_xarray(
             "grey",
             alpha=0.1,
         )
-        ax.set(ylim=ylim)
+    ax.set(ylim=ylim)
 
     ax.xaxis.set_major_locator(matplotlib.dates.DayLocator(interval=date_interval))
     ax.set(**kwargs)

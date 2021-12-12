@@ -133,16 +133,8 @@ def download(url, path=".", repo="italy"):
 
 
 REFORMAT = {
-    "world": {
-        "date_start": 4,
-        "country": "Country/Region",
-        "state": "Province/State",
-    },
-    "usa": {
-        "date_start": 16,
-        "country": "Country_Region",
-        "state": "Province_State",
-    },
+    "world": {"date_start": 4, "country": "Country/Region", "state": "Province/State",},
+    "usa": {"date_start": 16, "country": "Country_Region", "state": "Province_State",},
 }
 
 
@@ -192,7 +184,8 @@ def read_jhu_global(path, lut_path=None):
     ds = ds.set_coords(["country", "state", "lat", "lon"])
     da = ds.to_array("date")
     time = [
-        "20{2:02d}-{0:02d}-{1:02d}".format(*map(int, d.split("/"))) for d in da.date.values
+        "20{2:02d}-{0:02d}-{1:02d}".format(*map(int, d.split("/")))
+        for d in da.date.values
     ]
     location = [
         " / ".join(i for i in items if i)
@@ -240,7 +233,7 @@ def read_jhu_usa(deaths_path):
             "Long_": "lon",
         }
     )
-    ds = ds.assign_coords({"state_region": ("index", "US / " + ds.state_region)})
+    ds = ds.assign_coords({"state_region": ("index", "US / " + ds.state_region.data)})
     ds = ds.set_coords(["country", "state_region", "county", "lat", "lon"])
     ds = ds.drop(["UID", "iso2", "iso3", "code3", "FIPS", "Combined_Key"])
     if "Population" in ds:
@@ -249,14 +242,14 @@ def read_jhu_usa(deaths_path):
         ds = ds.set_coords(["population"])
     da = ds.to_array("date")
     time = [
-        "2020-%02d-%02d" % tuple(map(int, d.split("/")[:2])) for d in da.date.values
+        "20%02d-%02d-%02d" % tuple(map(int, d.split("/")[2:3] + d.split("/")[:2])) for d in da.date.values
     ]
     da = da.assign_coords(
         {
-            "country": ("index", da.country.astype(str)),
-            "state_region": ("index", da.state_region.astype(str)),
+            "country": ("index", da.country.astype(str).data),
+            "state_region": ("index", da.state_region.astype(str).data),
             "time": ("date", np.array(time, "datetime64")),
-            "location": ("index", (ds.state_region + " / " + ds.county).astype(str)),
+            "location": ("index", (ds.state_region + " / " + ds.county).astype(str).data),
         }
     )
     da = da.swap_dims({"date": "time", "index": "location"})
@@ -335,20 +328,18 @@ def read_istat(path, **kwargs):
     return istat, data
 
 
-def read_dpc(path):
+def read_dpc(path, location_prefix="Italy / "):
     df = pd.read_csv(path, parse_dates=["data"], index_col=["data"])
     df.index = df.index.normalize().rename("time")
-    df["location"] = "Italy / " + df["denominazione_regione"]
+    df["location"] = df["denominazione_regione"]
     df = df.set_index("location", append=True)
     ds = df[
         [
             "ricoverati_con_sintomi",
             "terapia_intensiva",
             "deceduti",
-            "totale_positivi",
-            "totale_casi",
+            "nuovi_positivi",
             "tamponi",
-            "casi_testati",
             "ingressi_terapia_intensiva",
         ]
     ].to_xarray()
@@ -357,31 +348,22 @@ def read_dpc(path):
             "lat": ("location", df.groupby("location")["lat"].first()),
             "lon": ("location", df.groupby("location")["long"].first()),
             "country": ("location", ["Italy"] * ds.location.size),
-            "location": ("location", [str(l) for l in ds.location.values]),
+            "location": ("location", [location_prefix + str(l) for l in ds.location.values]),
             "state_region": ("location", [str(l) for l in ds.location.values]),
+            "population": (
+                "location",
+                [POPULATION_BY_REGION[l] for l in ds.location.values],
+            ),
         }
     )
     ds = ds.rename(
         {
             "ricoverati_con_sintomi": "current_severe",
             "terapia_intensiva": "current_critical",
-            "totale_positivi": "current_confirmed",
             "deceduti": "deaths",
-            "totale_casi": "confirmed",
+            "nuovi_positivi": "daily_confirmed",
             "tamponi": "tests",
-            "casi_testati": "tested",
             "ingressi_terapia_intensiva": "daily_critical",
-        }
-    )
-    ds = ds.assign(
-        {
-            "population": (
-                "location",
-                [
-                    POPULATION_BY_REGION[l.partition(" / ")[2]]
-                    for l in ds.location.values
-                ],
-            )
         }
     )
     return ds.fillna(0)
@@ -403,8 +385,8 @@ def read_vaccini(path):
         df.loc[df.nome_area == label, "nome_area"] = new_label
     df.index = df.index.normalize().rename("time")
     df = df.set_index(["nome_area", "fornitore", "fascia_anagrafica"], append=True)
-    df = df.rename(columns={"prima_dose": "primer", "seconda_dose": "booster"})
-    ds = df[["primer", "booster"]].to_xarray().fillna(0)
+    df = df.rename(columns={"prima_dose": "first", "seconda_dose": "second", "dose_addizionale_booster": "booster"})
+    ds = df[["first", "second", "booster"]].to_xarray().fillna(0)
     ds = ds.to_array("dose_type", name="doses").to_dataset()
     ds = ds.rename(
         {
